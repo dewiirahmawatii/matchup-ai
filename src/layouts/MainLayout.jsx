@@ -22,10 +22,12 @@ export default function MainLayout() {
     localStorage.setItem('layoutMode', mode);
   };
 
+  const isSplash = pathname === '/';
+
   return (
     <MobileContainer layoutMode={layoutMode}>
       {/* Floating Layout Toggle Selector (matches top-right toggle in user design mockup) */}
-      <div className="absolute top-6 right-6 z-50 flex items-center bg-white/95 border border-outline-variant/40 rounded-full p-1 shadow-md pointer-events-auto">
+      <div className={`absolute ${isSplash ? 'top-6' : 'top-20'} right-6 z-[100] flex items-center bg-white/95 border border-outline-variant/40 rounded-full p-1 shadow-md pointer-events-auto transition-all duration-300`}>
         <button 
           type="button"
           onClick={() => handleToggleLayout('mobile')}
