@@ -1,8 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function Dashboard() {
   const navigate = useNavigate();
+
+  const [hasUploadedCV, setHasUploadedCV] = useState(() => {
+    return localStorage.getItem('hasUploadedCV') === 'true';
+  });
 
   const recommendedJobs = [
     {
@@ -91,7 +95,7 @@ export default function Dashboard() {
         </section>
 
         {/* Bento Section */}
-        <div className="space-y-6 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
           {/* Career Readiness */}
           <div className="glass-card rounded-[24px] p-6 flex flex-col justify-between">
             <div>
@@ -110,22 +114,27 @@ export default function Dashboard() {
                     r="58" 
                     stroke="currentColor" 
                     strokeDasharray="364.4" 
-                    strokeDashoffset="54.6" 
+                    strokeDashoffset={hasUploadedCV ? "54.6" : "364.4"} 
                     strokeLinecap="round" 
                     strokeWidth="8"
+                    style={{ transition: 'stroke-dashoffset 1s ease-out' }}
                   ></circle>
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="font-headline-lg text-headline-lg text-primary">85</span>
-                  <span className="font-label-sm text-label-sm text-on-surface-variant">Score</span>
+                  <span className="font-headline-lg text-headline-lg text-primary">
+                    {hasUploadedCV ? "85" : "0"}
+                  </span>
+                  <span className="font-label-sm text-label-sm text-on-surface-variant">
+                    {hasUploadedCV ? "Score" : "Pending CV"}
+                  </span>
                 </div>
               </div>
             </div>
             <button 
-              onClick={() => navigate('/skill-gap')} 
+              onClick={() => navigate(hasUploadedCV ? '/skill-gap' : '/upload-cv')} 
               className="w-full py-3 bg-surface-container-high hover:bg-surface-container-highest text-primary font-label-sm text-label-sm rounded-xl transition-colors"
             >
-              Improve Score
+              {hasUploadedCV ? "Improve Score" : "Upload CV to Begin"}
             </button>
           </div>
 
@@ -139,78 +148,130 @@ export default function Dashboard() {
                 </div>
                 <h3 className="font-title-md text-title-md">AI Career Companion</h3>
               </div>
-              <p className="font-headline-lg text-headline-lg mb-4 max-w-md leading-tight text-[22px]">
-                "You're a great fit for <span className="underline decoration-tertiary-fixed decoration-2 underline-offset-4">Backend roles</span> at Series B startups."
-              </p>
-              <p className="font-body-md text-body-md text-on-tertiary/80 mb-6 max-w-lg">
-                Our analysis shows your Node.js and AWS skills are in the top 5% for current openings. We've prioritized 12 new matches for you.
-              </p>
-              <div className="flex flex-wrap gap-3">
-                <button 
-                  onClick={() => navigate('/jobs')} 
-                  className="px-4 py-2 bg-on-tertiary text-tertiary rounded-full font-label-sm text-label-sm font-bold active:scale-95 transition-all"
-                >
-                  View Roles
-                </button>
-                <button 
-                  onClick={() => navigate('/skill-gap')} 
-                  className="px-4 py-2 border border-on-tertiary/40 rounded-full font-label-sm text-label-sm active:scale-95 transition-all"
-                >
-                  Skill Gap Map
-                </button>
-              </div>
+              {hasUploadedCV ? (
+                <>
+                  <p className="font-headline-lg text-headline-lg mb-4 max-w-md leading-tight text-[22px]">
+                    "You're a great fit for <span className="underline decoration-tertiary-fixed decoration-2 underline-offset-4">Backend roles</span> at Series B startups."
+                  </p>
+                  <p className="font-body-md text-body-md text-on-tertiary/80 mb-6 max-w-lg">
+                    Our analysis shows your Node.js and AWS skills are in the top 5% for current openings. We've prioritized 12 new matches for you.
+                  </p>
+                  <div className="flex flex-wrap gap-3">
+                    <button 
+                      onClick={() => navigate('/jobs')} 
+                      className="px-4 py-2 bg-on-tertiary text-tertiary rounded-full font-label-sm text-label-sm font-bold active:scale-95 transition-all"
+                    >
+                      View Roles
+                    </button>
+                    <button 
+                      onClick={() => navigate('/skill-gap')} 
+                      className="px-4 py-2 border border-on-tertiary/40 rounded-full font-label-sm text-label-sm active:scale-95 transition-all"
+                    >
+                      Skill Gap Map
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="font-headline-lg text-headline-lg mb-4 max-w-md leading-tight text-[22px]">
+                    "Awaiting your CV upload..."
+                  </p>
+                  <p className="font-body-md text-body-md text-on-tertiary/80 mb-6 max-w-lg">
+                    Upload your resume now to unlock our AI Matching Engine, skill evaluations, and personalized career pathways.
+                  </p>
+                  <div className="flex flex-wrap gap-3">
+                    <button 
+                      onClick={() => navigate('/upload-cv')} 
+                      className="px-6 py-2 bg-on-tertiary text-tertiary rounded-full font-label-sm text-label-sm font-bold active:scale-95 transition-all"
+                    >
+                      Upload CV
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Recommended Jobs */}
-        <section className="mb-12">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="font-headline-lg text-headline-lg text-on-surface">Top Recommended</h3>
-            <button onClick={() => navigate('/jobs')} className="font-label-sm text-label-sm text-primary hover:underline">View All</button>
-          </div>
-          
-          <div className="flex gap-6 overflow-x-auto hide-scrollbar snap-x snap-mandatory -mx-margin-mobile px-margin-mobile">
-            {recommendedJobs.map((job) => (
-              <div 
-                key={job.id} 
-                onClick={() => navigate(`/job-detail/${job.id}`)}
-                className="min-w-[300px] snap-start glass-card rounded-[24px] p-6 group transition-all hover:scale-[1.01] active:scale-95 cursor-pointer flex-shrink-0"
-              >
-                <div className="flex justify-between items-start mb-6">
-                  <div className="w-14 h-14 rounded-2xl bg-surface-container flex items-center justify-center p-2">
-                    <img className="w-full object-contain" src={job.logo} alt={job.company} />
+        {/* Dynamic Job recommendations or Upload CV Banner */}
+        {hasUploadedCV ? (
+          /* Recommended Jobs */
+          <section className="mb-12">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="font-headline-lg text-headline-lg text-on-surface">Top Recommended</h3>
+              <button onClick={() => navigate('/jobs')} className="font-label-sm text-label-sm text-primary hover:underline">View All</button>
+            </div>
+            
+            <div className="flex gap-6 overflow-x-auto hide-scrollbar snap-x snap-mandatory md:grid md:grid-cols-3 md:gap-6 md:overflow-visible -mx-margin-mobile px-margin-mobile md:mx-0 md:px-0">
+              {recommendedJobs.map((job) => (
+                <div 
+                  key={job.id} 
+                  onClick={() => navigate(`/job-detail/${job.id}`)}
+                  className="min-w-[300px] snap-start glass-card rounded-[24px] p-6 group transition-all hover:scale-[1.01] active:scale-95 cursor-pointer flex-shrink-0"
+                >
+                  <div className="flex justify-between items-start mb-6">
+                    <div className="w-14 h-14 rounded-2xl bg-surface-container flex items-center justify-center p-2">
+                      <img className="w-full object-contain" src={job.logo} alt={job.company} />
+                    </div>
+                    <div className="bg-primary-container/10 text-primary-container px-3 py-1.5 rounded-full font-label-sm text-label-sm flex items-center gap-1.5 match-glow">
+                      <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+                      {job.match}% Match
+                    </div>
                   </div>
-                  <div className="bg-primary-container/10 text-primary-container px-3 py-1.5 rounded-full font-label-sm text-label-sm flex items-center gap-1.5 match-glow">
-                    <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
-                    {job.match}% Match
+                  
+                  <div className="mb-6">
+                    <h4 className="font-title-md text-title-md text-on-surface mb-1 truncate">{job.title}</h4>
+                    <p className="font-body-md text-body-md text-on-surface-variant">{job.company} • {job.location}</p>
+                  </div>
+                  
+                  <div className="flex flex-wrap gap-2 mb-6">
+                    {job.tags.map(tag => (
+                      <span key={tag} className="px-3 py-1 bg-surface-container rounded-full font-label-sm text-label-sm text-on-surface-variant">{tag}</span>
+                    ))}
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="font-label-sm text-label-sm font-bold text-on-surface">{job.salary}</span>
+                    <button className="bg-primary px-6 py-3 text-on-primary rounded-xl font-label-sm text-label-sm hover:bg-primary-container transition-colors">Apply</button>
                   </div>
                 </div>
-                
-                <div className="mb-6">
-                  <h4 className="font-title-md text-title-md text-on-surface mb-1 truncate">{job.title}</h4>
-                  <p className="font-body-md text-body-md text-on-surface-variant">{job.company} • {job.location}</p>
+              ))}
+            </div>
+          </section>
+        ) : (
+          /* Upload Your CV Hero Banner */
+          <section className="mb-12">
+            <div className="w-full p-8 rounded-[32px] bg-gradient-to-br from-primary via-[#2563eb] to-tertiary text-white relative overflow-hidden shadow-xl shadow-primary/10">
+              {/* Aurora light overlay */}
+              <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 blur-3xl rounded-full translate-x-16 -translate-y-16 pointer-events-none"></div>
+              
+              <div className="relative z-10 flex flex-col items-start space-y-6">
+                <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center border border-white/20">
+                  <span className="material-symbols-outlined text-white text-3xl">auto_awesome</span>
+                </div>
+                <div className="space-y-2">
+                  <h3 className="font-title-md text-title-md text-white text-[22px] font-bold">Upload Your CV</h3>
+                  <p className="text-white/80 font-body-md text-sm leading-relaxed max-w-sm">
+                    Unlock tailored job matches, automated resume parsing, and expert career suggestions from MatchUp AI.
+                  </p>
                 </div>
                 
-                <div className="flex flex-wrap gap-2 mb-6">
-                  {job.tags.map(tag => (
-                    <span key={tag} className="px-3 py-1 bg-surface-container rounded-full font-label-sm text-label-sm text-on-surface-variant">{tag}</span>
-                  ))}
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <span className="font-label-sm text-label-sm font-bold text-on-surface">{job.salary}</span>
-                  <button className="bg-primary px-6 py-3 text-on-primary rounded-xl font-label-sm text-label-sm hover:bg-primary-container transition-colors">Apply</button>
-                </div>
+                <button 
+                  onClick={() => navigate('/upload-cv')}
+                  className="w-full sm:w-auto px-6 py-3.5 bg-white text-primary rounded-xl font-label-sm text-label-sm font-bold shadow-md hover:bg-surface-container transition-all active:scale-95 duration-100 flex items-center justify-center gap-2"
+                >
+                  <span>Upload CV</span>
+                  <span className="material-symbols-outlined text-sm">cloud_upload</span>
+                </button>
               </div>
-            ))}
-          </div>
-        </section>
+            </div>
+          </section>
+        )}
 
         {/* Skill Mastery Progress */}
         <section className="mb-12">
           <h3 className="font-headline-lg text-headline-lg text-on-surface mb-6">Skill Upgrades</h3>
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Upgrade 1 */}
             <div className="p-6 bg-surface-container-low rounded-[24px] flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-tertiary-container flex items-center justify-center text-on-tertiary-container">
@@ -219,10 +280,10 @@ export default function Dashboard() {
               <div className="flex-1">
                 <div className="flex justify-between items-center mb-2">
                   <span className="font-title-md text-title-md text-on-surface">GraphQL APIs</span>
-                  <span className="font-label-sm text-label-sm text-primary">80%</span>
+                  <span className="font-label-sm text-label-sm text-primary">{hasUploadedCV ? "80%" : "0%"}</span>
                 </div>
                 <div className="h-2 w-full bg-outline-variant rounded-full overflow-hidden">
-                  <div className="h-full bg-primary-container" style={{ width: '80%' }}></div>
+                  <div className="h-full bg-primary-container" style={{ width: hasUploadedCV ? '80%' : '0%' }}></div>
                 </div>
               </div>
             </div>
@@ -235,10 +296,10 @@ export default function Dashboard() {
               <div className="flex-1">
                 <div className="flex justify-between items-center mb-2">
                   <span className="font-title-md text-title-md text-on-surface">AWS Lambda</span>
-                  <span className="font-label-sm text-label-sm text-primary">45%</span>
+                  <span className="font-label-sm text-label-sm text-primary">{hasUploadedCV ? "45%" : "0%"}</span>
                 </div>
                 <div className="h-2 w-full bg-outline-variant rounded-full overflow-hidden">
-                  <div className="h-full bg-primary-container" style={{ width: '45%' }}></div>
+                  <div className="h-full bg-primary-container" style={{ width: hasUploadedCV ? '45%' : '0%' }}></div>
                 </div>
               </div>
             </div>

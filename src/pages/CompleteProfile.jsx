@@ -1,14 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function CompleteProfile() {
   const navigate = useNavigate();
+  const fileInputRef = useRef(null);
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 3;
 
   // Onboarding Form States
   const [fullName, setFullName] = useState('');
   const [currentCity, setCurrentCity] = useState('');
+  const [photoPreview, setPhotoPreview] = useState(null);
   const [highestDegree, setHighestDegree] = useState("Bachelor's Degree");
   const [fieldOfStudy, setFieldOfStudy] = useState('');
   const [institution, setInstitution] = useState('');
@@ -19,13 +21,14 @@ export default function CompleteProfile() {
     management: false,
   });
   const [workplace, setWorkplace] = useState('Remote Only');
+  const [isDragOver, setIsDragOver] = useState(false);
 
   const handleNext = () => {
     if (currentStep < totalSteps) {
       setCurrentStep(currentStep + 1);
     } else {
-      // Finish onboarding flow -> redirect to upload-cv page
-      navigate('/upload-cv');
+      // Finish onboarding flow -> redirect to Dashboard (Home) as requested
+      navigate('/dashboard');
     }
   };
 
@@ -37,6 +40,43 @@ export default function CompleteProfile() {
 
   const toggleInterest = (key) => {
     setInterests(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const processFile = (file) => {
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setPhotoPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      processFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      processFile(e.target.files[0]);
+    }
+  };
+
+  const triggerBrowse = () => {
+    fileInputRef.current.click();
   };
 
   const percentage = Math.round((currentStep / totalSteps) * 100);
@@ -65,27 +105,28 @@ export default function CompleteProfile() {
         </div>
         <div className="w-full h-2 bg-surface-container rounded-full overflow-hidden">
           <div 
-            className="h-full bg-primary-container transition-all duration-500 ease-out" 
+            className="h-full bg-primary transition-all duration-500 ease-out" 
             style={{ width: `${percentage}%` }}
           ></div>
         </div>
       </div>
 
       {/* Onboarding Canvas */}
-      <main className="w-full flex-1 px-5 py-12">
-        <div className="space-y-12">
+      <main className="w-full flex-grow px-5 py-10 max-w-xl mx-auto flex flex-col justify-between">
+        <div className="space-y-10">
           {/* Step 1: Basic Info */}
           {currentStep === 1 && (
-            <section className="fade-in">
-              <div className="space-y-2 mb-8">
+            <section className="animate-fade-in space-y-6">
+              <div className="space-y-2">
                 <h1 className="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Let's start with the basics</h1>
                 <p className="font-body-lg text-body-lg text-on-surface-variant">Tell us a bit about yourself to begin your intelligent career journey.</p>
               </div>
+              
               <div className="space-y-6">
                 <div className="relative group">
-                  <label className="block font-label-sm text-label-sm text-outline mb-1 ml-1 group-focus-within:text-primary transition-colors">Full Name</label>
+                  <label className="block font-label-sm text-label-sm text-outline mb-1.5 ml-1 transition-colors">Full Name</label>
                   <input 
-                    className="w-full h-14 bg-surface-container-lowest border border-outline-variant rounded-xl px-4 text-body-md focus:border-primary-container focus:ring-4 focus:ring-primary-container/10 outline-none transition-all" 
+                    className="w-full h-14 bg-surface-container-lowest border border-outline-variant rounded-xl px-4 text-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" 
                     placeholder="e.g. Alex Rivera" 
                     type="text"
                     value={fullName}
@@ -93,19 +134,53 @@ export default function CompleteProfile() {
                   />
                 </div>
                 <div className="relative group">
-                  <label className="block font-label-sm text-label-sm text-outline mb-1 ml-1 group-focus-within:text-primary transition-colors">Current City</label>
+                  <label className="block font-label-sm text-label-sm text-outline mb-1.5 ml-1 transition-colors">Current City</label>
                   <input 
-                    className="w-full h-14 bg-surface-container-lowest border border-outline-variant rounded-xl px-4 text-body-md focus:border-primary-container focus:ring-4 focus:ring-primary-container/10 outline-none transition-all" 
+                    className="w-full h-14 bg-surface-container-lowest border border-outline-variant rounded-xl px-4 text-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" 
                     placeholder="e.g. San Francisco, CA" 
                     type="text"
                     value={currentCity}
                     onChange={(e) => setCurrentCity(e.target.value)}
                   />
                 </div>
-                <div className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-outline-variant rounded-2xl bg-surface-container/30 hover:bg-surface-container/50 transition-all cursor-pointer">
-                  <span className="material-symbols-outlined text-4xl text-primary mb-3">cloud_upload</span>
-                  <p className="font-title-md text-title-md text-on-surface">Upload Profile Photo</p>
-                  <p className="font-label-sm text-label-sm text-on-surface-variant mt-1 text-center">JPG, PNG or GIF. Max 5MB.</p>
+                
+                {/* Upload Photo Dropzone */}
+                <div className="relative group">
+                  <label className="block font-label-sm text-label-sm text-outline mb-1.5 ml-1 transition-colors">Profile Photo</label>
+                  <div 
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    onClick={triggerBrowse}
+                    className={`flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-2xl cursor-pointer transition-all duration-300 relative overflow-hidden bg-white ${
+                      isDragOver ? 'border-primary bg-primary/5' : 'border-outline-variant hover:border-primary'
+                    }`}
+                  >
+                    {photoPreview ? (
+                      <div className="flex items-center gap-4">
+                        <div className="w-16 h-16 rounded-full overflow-hidden border border-outline-variant">
+                          <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
+                        </div>
+                        <div>
+                          <p className="font-title-md text-sm text-on-surface">Photo loaded successfully</p>
+                          <p className="text-xs text-outline">Tap to change</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <span className="material-symbols-outlined text-4xl text-outline group-hover:text-primary transition-colors mb-2">cloud_upload</span>
+                        <p className="font-title-md text-sm text-on-surface">Upload Profile Photo</p>
+                        <p className="font-label-sm text-[11px] text-on-surface-variant mt-1 text-center">JPG, PNG or GIF. Max 5MB.</p>
+                      </>
+                    )}
+                    <input 
+                      ref={fileInputRef}
+                      onChange={handleFileChange}
+                      accept="image/*" 
+                      className="hidden" 
+                      type="file"
+                    />
+                  </div>
                 </div>
               </div>
             </section>
@@ -113,17 +188,17 @@ export default function CompleteProfile() {
 
           {/* Step 2: Education */}
           {currentStep === 2 && (
-            <section className="fade-in">
-              <div className="space-y-2 mb-8">
+            <section className="animate-fade-in space-y-6">
+              <div className="space-y-2">
                 <h1 className="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Your Academic Path</h1>
                 <p className="font-body-lg text-body-lg text-on-surface-variant">Education helps MatchUp AI understand your foundational expertise.</p>
               </div>
               <div className="space-y-6">
                 <div className="relative group">
-                  <label className="block font-label-sm text-label-sm text-outline mb-1 ml-1 group-focus-within:text-primary transition-colors">Highest Degree</label>
+                  <label className="block font-label-sm text-label-sm text-outline mb-1.5 ml-1 transition-colors">Highest Degree</label>
                   <div className="relative">
                     <select 
-                      className="w-full h-14 bg-surface-container-lowest border border-outline-variant rounded-xl px-4 text-body-md focus:border-primary-container focus:ring-4 focus:ring-primary-container/10 outline-none transition-all appearance-none"
+                      className="w-full h-14 bg-surface-container-lowest border border-outline-variant rounded-xl px-4 text-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all appearance-none"
                       value={highestDegree}
                       onChange={(e) => setHighestDegree(e.target.value)}
                     >
@@ -139,9 +214,9 @@ export default function CompleteProfile() {
                   </div>
                 </div>
                 <div className="relative group">
-                  <label className="block font-label-sm text-label-sm text-outline mb-1 ml-1 group-focus-within:text-primary transition-colors">Field of Study</label>
+                  <label className="block font-label-sm text-label-sm text-outline mb-1.5 ml-1 transition-colors">Field of Study</label>
                   <input 
-                    className="w-full h-14 bg-surface-container-lowest border border-outline-variant rounded-xl px-4 text-body-md focus:border-primary-container focus:ring-4 focus:ring-primary-container/10 outline-none transition-all" 
+                    className="w-full h-14 bg-surface-container-lowest border border-outline-variant rounded-xl px-4 text-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" 
                     placeholder="e.g. Computer Science" 
                     type="text"
                     value={fieldOfStudy}
@@ -149,9 +224,9 @@ export default function CompleteProfile() {
                   />
                 </div>
                 <div className="relative group">
-                  <label className="block font-label-sm text-label-sm text-outline mb-1 ml-1 group-focus-within:text-primary transition-colors">Institution</label>
+                  <label className="block font-label-sm text-label-sm text-outline mb-1.5 ml-1 transition-colors">Institution</label>
                   <input 
-                    className="w-full h-14 bg-surface-container-lowest border border-outline-variant rounded-xl px-4 text-body-md focus:border-primary-container focus:ring-4 focus:ring-primary-container/10 outline-none transition-all" 
+                    className="w-full h-14 bg-surface-container-lowest border border-outline-variant rounded-xl px-4 text-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" 
                     placeholder="e.g. Stanford University" 
                     type="text"
                     value={institution}
@@ -164,9 +239,9 @@ export default function CompleteProfile() {
 
           {/* Step 3: Career Interests */}
           {currentStep === 3 && (
-            <section className="fade-in">
-              <div className="space-y-2 mb-8">
-                <div className="flex items-center gap-2 text-primary ai-pulse">
+            <section className="animate-fade-in space-y-6">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-primary ai-pulse mb-1">
                   <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>auto_awesome</span>
                   <span className="font-label-sm text-label-sm font-bold uppercase tracking-widest">AI Tuning Active</span>
                 </div>
@@ -176,7 +251,7 @@ export default function CompleteProfile() {
 
               <div className="grid grid-cols-2 gap-4">
                 {/* Interest Cards */}
-                <label className={`flex flex-col items-center justify-center p-6 bg-surface-container-lowest border rounded-2xl cursor-pointer hover:border-primary-container/40 transition-all group ${interests.engineering ? 'border-primary-container bg-primary-container/5' : 'border-outline-variant'}`}>
+                <label className={`flex flex-col items-center justify-center p-6 bg-surface-container-lowest border rounded-2xl cursor-pointer hover:border-primary/40 transition-all group ${interests.engineering ? 'border-primary bg-primary/5' : 'border-outline-variant'}`}>
                   <input 
                     className="hidden" 
                     type="checkbox" 
@@ -184,10 +259,10 @@ export default function CompleteProfile() {
                     onChange={() => toggleInterest('engineering')}
                   />
                   <span className={`material-symbols-outlined text-3xl mb-2 group-hover:text-primary transition-colors ${interests.engineering ? 'text-primary' : 'text-on-surface-variant'}`}>code</span>
-                  <span className="font-title-md text-title-md text-on-surface">Engineering</span>
+                  <span className="font-title-md text-sm text-on-surface font-semibold">Engineering</span>
                 </label>
 
-                <label className={`flex flex-col items-center justify-center p-6 bg-surface-container-lowest border rounded-2xl cursor-pointer hover:border-primary-container/40 transition-all group ${interests.design ? 'border-primary-container bg-primary-container/5' : 'border-outline-variant'}`}>
+                <label className={`flex flex-col items-center justify-center p-6 bg-surface-container-lowest border rounded-2xl cursor-pointer hover:border-primary/40 transition-all group ${interests.design ? 'border-primary bg-primary/5' : 'border-outline-variant'}`}>
                   <input 
                     className="hidden" 
                     type="checkbox" 
@@ -195,10 +270,10 @@ export default function CompleteProfile() {
                     onChange={() => toggleInterest('design')}
                   />
                   <span className={`material-symbols-outlined text-3xl mb-2 group-hover:text-primary transition-colors ${interests.design ? 'text-primary' : 'text-on-surface-variant'}`}>brush</span>
-                  <span className="font-title-md text-title-md text-on-surface">Design</span>
+                  <span className="font-title-md text-sm text-on-surface font-semibold">Design</span>
                 </label>
 
-                <label className={`flex flex-col items-center justify-center p-6 bg-surface-container-lowest border rounded-2xl cursor-pointer hover:border-primary-container/40 transition-all group ${interests.marketing ? 'border-primary-container bg-primary-container/5' : 'border-outline-variant'}`}>
+                <label className={`flex flex-col items-center justify-center p-6 bg-surface-container-lowest border rounded-2xl cursor-pointer hover:border-primary/40 transition-all group ${interests.marketing ? 'border-primary bg-primary/5' : 'border-outline-variant'}`}>
                   <input 
                     className="hidden" 
                     type="checkbox" 
@@ -206,10 +281,10 @@ export default function CompleteProfile() {
                     onChange={() => toggleInterest('marketing')}
                   />
                   <span className={`material-symbols-outlined text-3xl mb-2 group-hover:text-primary transition-colors ${interests.marketing ? 'text-primary' : 'text-on-surface-variant'}`}>trending_up</span>
-                  <span className="font-title-md text-title-md text-on-surface">Marketing</span>
+                  <span className="font-title-md text-sm text-on-surface font-semibold">Marketing</span>
                 </label>
 
-                <label className={`flex flex-col items-center justify-center p-6 bg-surface-container-lowest border rounded-2xl cursor-pointer hover:border-primary-container/40 transition-all group ${interests.management ? 'border-primary-container bg-primary-container/5' : 'border-outline-variant'}`}>
+                <label className={`flex flex-col items-center justify-center p-6 bg-surface-container-lowest border rounded-2xl cursor-pointer hover:border-primary/40 transition-all group ${interests.management ? 'border-primary bg-primary/5' : 'border-outline-variant'}`}>
                   <input 
                     className="hidden" 
                     type="checkbox" 
@@ -217,18 +292,18 @@ export default function CompleteProfile() {
                     onChange={() => toggleInterest('management')}
                   />
                   <span className={`material-symbols-outlined text-3xl mb-2 group-hover:text-primary transition-colors ${interests.management ? 'text-primary' : 'text-on-surface-variant'}`}>groups</span>
-                  <span className="font-title-md text-title-md text-on-surface">Management</span>
+                  <span className="font-title-md text-sm text-on-surface font-semibold">Management</span>
                 </label>
               </div>
 
-              <div className="mt-10 space-y-4">
+              <div className="mt-6 space-y-4">
                 <p className="font-label-sm text-label-sm text-outline uppercase tracking-widest">Preferred Workplace</p>
                 <div className="flex flex-wrap gap-3">
                   {['Remote Only', 'Hybrid', 'On-site'].map((type) => (
                     <span 
                       key={type}
                       onClick={() => setWorkplace(type)}
-                      className={`px-4 py-2 rounded-full font-label-sm text-label-sm transition-colors cursor-pointer ${workplace === type ? 'bg-primary-container text-on-primary-container' : 'bg-secondary-container text-on-secondary-container hover:bg-primary-container/10'}`}
+                      className={`px-4 py-2 rounded-full font-label-sm text-xs font-bold transition-colors cursor-pointer ${workplace === type ? 'bg-primary text-white shadow-sm' : 'bg-secondary-container text-on-secondary-container hover:bg-primary/10'}`}
                     >
                       {type}
                     </span>
@@ -243,18 +318,18 @@ export default function CompleteProfile() {
         <div className="mt-16 flex items-center justify-between gap-4">
           <button 
             type="button"
-            className={`px-8 h-12 rounded-full border border-outline text-on-surface font-title-md text-title-md hover:bg-surface-container transition-all active:scale-95 ${currentStep === 1 ? 'invisible' : ''}`}
+            className={`px-8 h-12 rounded-xl border border-outline text-on-surface font-title-md text-sm hover:bg-surface-container transition-all active:scale-95 ${currentStep === 1 ? 'invisible' : ''}`}
             onClick={handleBack}
           >
             Back
           </button>
-          <div className="flex-1"></div>
           <button 
             type="button"
-            className={`px-10 h-12 rounded-full font-title-md text-title-md shadow-lg hover:shadow-xl active:scale-95 transition-all ${currentStep === totalSteps ? 'bg-tertiary text-white hover:bg-tertiary/90' : 'bg-primary-container text-on-primary-container'}`}
+            className="px-10 h-12 bg-primary hover:bg-blue-700 text-white rounded-xl font-title-md text-sm shadow-md active:scale-95 transition-all flex items-center gap-2"
             onClick={handleNext}
           >
-            {currentStep === totalSteps ? 'Finish Setup' : 'Next'}
+            <span>{currentStep === totalSteps ? 'Continue' : 'Next'}</span>
+            <span className="material-symbols-outlined text-sm">arrow_forward</span>
           </button>
         </div>
       </main>

@@ -1,13 +1,28 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function UploadCV() {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
+  
+  // Timer references for unmount cleanup
+  const uploadIntervalRef = useRef(null);
+  const uploadTimeoutRef = useRef(null);
+
   const [isDragOver, setIsDragOver] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
   const [progress, setProgress] = useState(0);
   const [fileName, setFileName] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+
+  // Clean up timers when component unmounts
+  useEffect(() => {
+    return () => {
+      if (uploadIntervalRef.current) clearInterval(uploadIntervalRef.current);
+      if (uploadTimeoutRef.current) clearTimeout(uploadTimeoutRef.current);
+    };
+  }, []);
 
   const handleDragOver = (e) => {
     e.preventDefault();
@@ -19,18 +34,28 @@ export default function UploadCV() {
   };
 
   const startUploadSim = (name) => {
+    setErrorMessage('');
     setFileName(name);
     setUploading(true);
+    setIsSuccess(false);
     setProgress(0);
 
-    const interval = setInterval(() => {
+    if (uploadIntervalRef.current) clearInterval(uploadIntervalRef.current);
+    if (uploadTimeoutRef.current) clearTimeout(uploadTimeoutRef.current);
+
+    uploadIntervalRef.current = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 100) {
-          clearInterval(interval);
-          // Redirect to AI analysis page after progress completes
-          setTimeout(() => {
+          clearInterval(uploadIntervalRef.current);
+          setIsSuccess(true);
+          // Persist the state in localStorage
+          localStorage.setItem('hasUploadedCV', 'true');
+          
+          // Hold the success screen for 1.5 seconds before navigating
+          uploadTimeoutRef.current = setTimeout(() => {
             navigate('/ai-analysis');
-          }, 400);
+          }, 1500);
+          
           return 100;
         }
         return prev + 10;
@@ -38,17 +63,29 @@ export default function UploadCV() {
     }, 150);
   };
 
+  const validateAndUpload = (file) => {
+    if (!file) return;
+    
+    // Restrict strictly to PDF files
+    if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+      setErrorMessage('Please upload a PDF file only.');
+      return;
+    }
+
+    startUploadSim(file.name);
+  };
+
   const handleDrop = (e) => {
     e.preventDefault();
     setIsDragOver(false);
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      startUploadSim(e.dataTransfer.files[0].name);
+      validateAndUpload(e.dataTransfer.files[0]);
     }
   };
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
-      startUploadSim(e.target.files[0].name);
+      validateAndUpload(e.target.files[0]);
     }
   };
 
@@ -72,7 +109,7 @@ export default function UploadCV() {
         <div className="flex items-center gap-2">
           <span className="material-symbols-outlined text-primary p-2 hover:bg-primary-container/20 rounded-full transition-colors cursor-pointer">notifications</span>
           <div className="w-8 h-8 rounded-full bg-surface-container-highest border border-outline-variant overflow-hidden">
-            <img className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCjrSd0O5ejX2Q2AZ3DybxnxEMyIrMQVLXq0xbVaub97DcQQrMfCB8qVhVk1WR2-gPMehSAZF0h4yWJnEU1NsaVN8VAb2-4vlB7xSfr_qdZ2ZROJJ_NUpHkrO0qGygf2uvRBKewKOvNUEDhMOduL2lzdcSV36RqfPGWqWRvGRMepCRVUinZVeDEEAzSpjmF6ivwIgEanp_zKtSkeT0YGS9uS2FyOPipeMqUi2Dio7rHkHiuScSsZ3gf" alt="Avatar" />
+            <img className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD8EBpeQTbq4o-Rr3_2-koldhoXOIgMKCzXdON3bHeDoifr6BFwl9wjJgzf7f_jfXXVlPAEy-V3eGNnNcqd0phU9f1fmh5_SnN_W3J9T_EWBlzuOWN0EWxtvc8JThP3lDCi5KdVe25JCIRZRwZkkR6vD1TVJmxgloTwOPvWEF3eXYzLjA5EyrU96AzrVIREzJuUHQ3K3C071CxeeP-lbVk6QCIKmCZCHjNMtG1myHvKNGqfG8Ney9fR" alt="Avatar" />
           </div>
         </div>
       </header>
@@ -80,21 +117,29 @@ export default function UploadCV() {
       {/* Main Content Area */}
       <main className="flex-grow flex flex-col items-center px-margin-mobile py-8 w-full">
         {/* Header Section */}
-        <section className="text-center mb-10 w-full max-w-2xl">
+        <section className="text-center mb-10 w-full max-w-2xl animate-fade-in">
           <h2 className="font-headline-lg text-[28px] font-semibold text-on-surface mb-3">Complete Your Profile</h2>
           <p className="font-body-lg text-body-lg text-on-surface-variant">Upload your CV to let our AI scan your skills and match you with the perfect career opportunities.</p>
         </section>
 
         {/* AI Callout Component */}
-        <div className="w-full max-w-xl mb-8 p-4 rounded-xl bg-primary-container/10 border border-primary/20 flex items-start gap-4">
+        <div className="w-full max-w-xl mb-8 p-4 rounded-xl bg-primary-container/10 border border-primary/20 flex items-start gap-4 animate-fade-in">
           <div className="bg-primary p-2 rounded-lg flex items-center justify-center">
             <span className="material-symbols-outlined text-on-primary ai-pulse" style={{ fontVariationSettings: "'FILL' 1" }}>bolt</span>
           </div>
           <div>
-            <h4 class="font-title-md text-title-md text-primary mb-1">AI Matching Engine</h4>
+            <h4 className="font-title-md text-title-md text-primary mb-1">AI Matching Engine</h4>
             <p className="font-label-sm text-label-sm text-on-surface-variant">MatchUp AI will analyze your profile to find the best match based on your unique experience, skills, and industry trends.</p>
           </div>
         </div>
+
+        {/* Error message */}
+        {errorMessage && (
+          <div className="w-full max-w-xl mb-6 p-4 rounded-xl bg-error-container text-on-error-container border border-error/25 flex items-center gap-3 animate-fade-in">
+            <span className="material-symbols-outlined text-error">error</span>
+            <span className="font-label-sm text-label-sm">{errorMessage}</span>
+          </div>
+        )}
 
         {/* Main Upload Zone */}
         {!uploading ? (
@@ -103,37 +148,52 @@ export default function UploadCV() {
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             onClick={triggerBrowse}
-            className={`w-full max-w-xl bg-white border-2 border-dashed rounded-[32px] p-10 mb-8 flex flex-col items-center justify-center text-center transition-all duration-300 cursor-pointer group shadow-sm ${isDragOver ? 'border-primary bg-primary/5 scale-[1.01]' : 'border-outline-variant hover:border-primary'}`}
+            className={`w-full max-w-xl bg-white border-2 border-dashed rounded-[32px] p-10 mb-8 flex flex-col items-center justify-center text-center transition-all duration-300 cursor-pointer group shadow-sm ${
+              isDragOver ? 'border-primary bg-primary/5 scale-[1.01]' : 'border-outline-variant hover:border-primary'
+            }`}
           >
             <div className="w-20 h-20 bg-surface-container-low rounded-full flex items-center justify-center mb-6 group-hover:bg-primary-container/10 transition-colors">
               <span className="material-symbols-outlined text-4xl text-outline group-hover:text-primary transition-colors">cloud_upload</span>
             </div>
             <h3 className="font-title-md text-title-md text-on-surface mb-2">Drag and drop your CV</h3>
-            <p className="font-body-md text-body-md text-on-surface-variant mb-6">PDF, DOCX, or RTF (Max 5MB)</p>
+            <p className="font-body-md text-body-md text-on-surface-variant mb-6">PDF files only (Max 5MB)</p>
             <button className="bg-primary text-on-primary font-title-md py-3 px-8 rounded-full hover:shadow-lg active:scale-95 transition-all">Browse Files</button>
             <input 
               ref={fileInputRef}
               onChange={handleFileChange}
-              accept=".pdf,.docx,.rtf" 
+              accept=".pdf" 
               className="hidden" 
               type="file"
             />
           </div>
         ) : (
           <div className="w-full max-w-xl bg-white border border-outline-variant rounded-[32px] p-10 mb-8 flex flex-col items-center justify-center shadow-sm">
-            <div className="w-20 h-20 bg-primary-container/10 rounded-full flex items-center justify-center mb-6">
-              <span className="material-symbols-outlined text-4xl text-primary ai-pulse">sync</span>
-            </div>
-            <h3 className="font-title-md text-title-md text-on-surface mb-2">Analyzing Resume...</h3>
-            <p className="font-body-md text-body-md text-on-surface-variant mb-6 truncate max-w-xs">{fileName}</p>
-            
-            <div className="w-full bg-surface-container-high h-2 rounded-full overflow-hidden mb-3">
-              <div 
-                className="bg-primary h-full rounded-full transition-all duration-150" 
-                style={{ width: `${progress}%` }}
-              ></div>
-            </div>
-            <span className="font-label-sm text-label-sm text-primary font-semibold">{progress}%</span>
+            {isSuccess ? (
+              <div className="flex flex-col items-center justify-center text-center animate-fade-in">
+                <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6 border border-green-200">
+                  <span className="material-symbols-outlined text-4xl text-green-600">check_circle</span>
+                </div>
+                <h3 className="font-title-md text-title-md text-on-surface mb-2">Upload Successful!</h3>
+                <p className="font-body-md text-body-md text-on-surface-variant mb-4 truncate max-w-xs">{fileName}</p>
+                <p className="font-label-sm text-label-sm text-primary font-semibold">Redirecting to AI Analysis...</p>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center text-center w-full">
+                <div className="w-20 h-20 bg-primary-container/10 rounded-full flex items-center justify-center mb-6">
+                  <span className="material-symbols-outlined text-4xl text-primary ai-pulse">sync</span>
+                </div>
+                <h3 className="font-title-md text-title-md text-on-surface mb-2">Analyzing Resume...</h3>
+                <p className="font-body-md text-body-md text-on-surface-variant mb-6 truncate max-w-xs">{fileName}</p>
+                
+                <div className="w-full bg-surface-container-high h-2 rounded-full overflow-hidden mb-3">
+                  <div 
+                    className="bg-primary h-full rounded-full transition-all duration-150" 
+                    style={{ width: `${progress}%` }}
+                  ></div>
+                </div>
+                <span className="font-label-sm text-label-sm text-primary font-semibold">{progress}%</span>
+              </div>
+            )}
           </div>
         )}
 

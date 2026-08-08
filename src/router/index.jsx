@@ -3,6 +3,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import MainLayout from '../layouts/MainLayout';
 import Splash from '../pages/Splash';
 import Login from '../pages/Login';
+import SignUp from '../pages/SignUp';
 import CompleteProfile from '../pages/CompleteProfile';
 import UploadCV from '../pages/UploadCV';
 import AICVAnalysis from '../pages/AICVAnalysis';
@@ -21,6 +22,7 @@ export const router = createBrowserRouter([
     children: [
       { path: '', element: <Splash /> },
       { path: 'login', element: <Login /> },
+      { path: 'signup', element: <SignUp /> },
       { path: 'complete-profile', element: <CompleteProfile /> },
       { path: 'upload-cv', element: <UploadCV /> },
       { path: 'ai-analysis', element: <AICVAnalysis /> },

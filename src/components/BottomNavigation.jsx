@@ -1,10 +1,12 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
-export default function BottomNavigation() {
+export default function BottomNavigation({ layoutMode }) {
   const navigate = useNavigate();
   const location = useLocation();
   const pathname = location.pathname;
+
+  if (layoutMode === 'desktop') return null;
 
   const navItems = [
     { path: '/dashboard', label: 'Home', icon: 'home', matches: ['/dashboard'] },
@@ -15,7 +17,7 @@ export default function BottomNavigation() {
   ];
 
   return (
-    <nav className="fixed bottom-0 w-full max-w-[450px] z-50 bg-surface/85 backdrop-blur-xl border-t border-outline-variant shadow-lg flex justify-around items-center px-4 pb-6 pt-2">
+    <nav className="fixed bottom-0 w-full max-w-[450px] md:hidden z-50 bg-surface/85 backdrop-blur-xl border-t border-outline-variant shadow-lg flex justify-around items-center px-4 pb-6 pt-2">
       {navItems.map((item) => {
         const isActive = item.matches.some(m => pathname.startsWith(m));
         return (

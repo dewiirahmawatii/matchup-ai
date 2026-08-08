@@ -139,3 +139,183 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #737686;
 }
+
+/* Premium Animations and Visual Effects */
+.mesh-gradient-bg {
+  background: radial-gradient(at 0% 0%, #ffffff 0px, transparent 50%),
+              radial-gradient(at 50% 0%, #f3e8ff 0px, transparent 50%),
+              radial-gradient(at 100% 0%, #e0f2fe 0px, transparent 50%),
+              radial-gradient(at 0% 50%, #eff6ff 0px, transparent 50%),
+              radial-gradient(at 100% 50%, #f5f3ff 0px, transparent 50%),
+              radial-gradient(at 50% 100%, #ffffff 0px, transparent 50%);
+  background-size: 200% 200%;
+  animation: mesh-flow 12s ease infinite;
+}
+
+@keyframes mesh-flow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Aurora Orbs */
+.aurora-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.45;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+.orb-blue {
+  background: radial-gradient(circle, #bae6fd 0%, rgba(186, 230, 253, 0) 70%);
+  animation: float-orb-blue 10s ease-in-out infinite alternate;
+}
+
+.orb-purple {
+  background: radial-gradient(circle, #f3e8ff 0%, rgba(243, 232, 255, 0) 70%);
+  animation: float-orb-purple 14s ease-in-out infinite alternate-reverse;
+}
+
+.orb-ice {
+  background: radial-gradient(circle, #dbeafe 0%, rgba(219, 234, 254, 0) 70%);
+  animation: float-orb-ice 12s ease-in-out infinite alternate;
+}
+
+@keyframes float-orb-blue {
+  0% { transform: translate(-10%, -10%) scale(1); }
+  100% { transform: translate(15%, 10%) scale(1.15); }
+}
+
+@keyframes float-orb-purple {
+  0% { transform: translate(10%, 20%) scale(1.1); }
+  100% { transform: translate(-15%, -10%) scale(0.9); }
+}
+
+@keyframes float-orb-ice {
+  0% { transform: translate(-5%, 15%) scale(0.95); }
+  100% { transform: translate(10%, -20%) scale(1.1); }
+}
+
+/* Glow logo backplate */
+.logo-glow-backplate {
+  position: absolute;
+  width: 180px;
+  height: 180px;
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.12) 0%, rgba(37, 99, 235, 0) 70%);
+  border-radius: 50%;
+  animation: logo-glow-pulse 6s ease-in-out infinite;
+}
+
+@keyframes logo-glow-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.2); opacity: 0.9; }
+}
+
+/* Dot Pattern */
+.bg-dot-pattern {
+  background-image: radial-gradient(rgba(37, 99, 235, 0.08) 1.5px, transparent 1.5px);
+  background-size: 24px 24px;
+}
+
+/* Particles/Sparkles */
+.sparkle-particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background-color: rgba(37, 99, 235, 0.3);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: sparkle-drift 8s infinite linear;
+}
+
+@keyframes sparkle-drift {
+  0% { transform: translateY(120%) translateX(0px) scale(0.5); opacity: 0; }
+  20% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { transform: translateY(-20%) translateX(20px) scale(1.2); opacity: 0; }
+}
+
+/* Decorative Circles */
+.decorative-circle-outline {
+  position: absolute;
+  border: 1px dashed rgba(37, 99, 235, 0.15);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: spin-slow 25s linear infinite;
+}
+
+@keyframes spin-slow {
+  to { transform: rotate(360deg); }
+}
+
+/* Hover Glow Button */
+.btn-get-started {
+  position: relative;
+  z-index: 10;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-get-started::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(95deg, #004ac6, #3e3fcc, #2563eb);
+  border-radius: 9999px;
+  z-index: -1;
+  opacity: 0;
+  filter: blur(8px);
+  transition: opacity 0.3s ease;
+}
+
+.btn-get-started:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 74, 198, 0.25);
+}
+
+.btn-get-started:hover::after {
+  opacity: 0.6;
+}
+
+.btn-get-started:active {
+  transform: translateY(0);
+}
+
+/* Glassmorphism Wave curve overlay */
+.glass-wave {
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+/* 3D Sphere Floating Animations */
+@keyframes float-sphere-lg {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-20px) rotate(8deg); }
+}
+
+@keyframes float-sphere-md {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-16px) rotate(-6deg); }
+}
+
+@keyframes float-sphere-sm {
+  0%, 100% { transform: translate(0px, 0px); }
+  50% { transform: translate(8px, -12px); }
+}
+
+.sphere-float-lg {
+  animation: float-sphere-lg 8s ease-in-out infinite;
+}
+
+.sphere-float-md {
+  animation: float-sphere-md 10s ease-in-out infinite;
+}
+
+.sphere-float-sm {
+  animation: float-sphere-sm 6s ease-in-out infinite;
+}
+
+
