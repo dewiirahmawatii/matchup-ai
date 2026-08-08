@@ -1,42 +1,37 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toggleSaveJob, DEFAULT_JOBS } from '../services/db';
+import { getMatchedJobs } from '../services/matching';
 
 export default function SavedJobs() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState('All');
   
-  const [savedJobs, setSavedJobs] = useState([
-    {
-      id: 1,
-      title: 'Senior Product Designer',
-      company: 'Lumina Systems',
-      location: 'Remote',
-      logo: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA45XNrAZPqsoHjn7t5utS6TQYzypICLuLYpPtS8xCtinb_wYW7Km13hP4R9eGyV01Ebl_909jIhiU1QZaKbO_3viAD6JIY_jB5lvhcX5yaNRj3jnZ-pFrrJHXNEA4NOlYrQBA7kq8havdc5gTWzR-GfpAeCLrNKdnJEFCCD4HquIc35F3V9vHdzuyaf5MfktLEa4z083TDv2X7FX1baFHfjTW2l6Y3QtQYF6qwxCk_ZAdUWAndP9J8',
-      match: 94,
-      tags: ['Figma', 'Design Systems', 'SaaS'],
-      bookmarked: true,
-      category: 'Remote Only',
-    },
-    {
-      id: 2,
-      title: 'Frontend Engineer (React)',
-      company: 'FinFlow',
-      location: 'New York, NY',
-      logo: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB7NP5hS04qqVAwB-KFt1osnzn8j75AocPvD1TnNtsLrhvjBrIsEO8NXmHmERTsQZTVu4snmoDUpL4jKA64vRYzG8MuDd2IzfA-l_K4DBfIKC4cM66Nk2Y8rO3Yej-Bf9pOEVdDDvdBGARoL2t1lJBJOBCnezKOpoRbdmwulR81DqSciHyIfQyDnyBS4vMDD_6hN-TPKAEmrgwkg7WdJ6zlKvbsay570bZXY1DjF8spjyRDv8Ri0ezk',
-      match: 88,
-      tags: ['React', 'TypeScript', 'Tailwind'],
-      bookmarked: true,
-      category: 'High Match Score',
-    }
-  ]);
+  const [savedJobs, setSavedJobs] = useState(DEFAULT_JOBS.map(j => ({ ...j, bookmarked: true })));
 
-  const toggleBookmark = (id) => {
+  useEffect(() => {
+    async function loadSaved() {
+      const data = await getMatchedJobs('alex.sterling@example.com');
+      if (data && data.length > 0) {
+        setSavedJobs(data);
+      }
+    }
+    loadSaved();
+  }, []);
+
+  const toggleBookmark = async (id) => {
+    const targetJob = savedJobs.find(j => j.id === id);
+    if (!targetJob) return;
+
+    // Optimistic state change
     setSavedJobs(prevJobs =>
       prevJobs.map(job =>
         job.id === id ? { ...job, bookmarked: !job.bookmarked } : job
       )
     );
+
+    await toggleSaveJob('alex.sterling@example.com', id, targetJob.bookmarked);
   };
 
   const filteredJobs = savedJobs.filter(job => {
@@ -55,10 +50,8 @@ export default function SavedJobs() {
     <div className="flex-1 flex flex-col relative pb-28">
       {/* Top Header Bar */}
       <header className="sticky top-0 z-50 bg-surface/85 backdrop-blur-xl shadow-sm px-5 py-3 flex justify-between items-center w-full">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-primary-container/20 bg-slate-100">
-            <img className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAITdEjgD3efljtl11r8movClwKRbatemBBQAalECsISOsJw1jHl7KZDiAlYfiXY8IWKVYlpTMtyyixfgHOmLkB5DOE8boPIHWLwkZ5nGLUOxGWrIB3yuW6I2eisHyjlXal6qCy7KufvwU4p6-OGSEPKap0_2W4oCYZ9Mqjb1E92WVYYzxc0y1HWhJebhAGt-T5yjk6FAjhk6WhrDg6RmALqLbPPeJZ6mw6x_NNe_Bl9Xuv0R8ysaSJ" alt="Avatar" />
-          </div>
+        <div className="flex items-center gap-2">
+          <span className="material-symbols-outlined text-primary text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>bolt</span>
           <h1 className="font-headline-lg-mobile text-headline-lg-mobile font-bold text-primary">MatchUp AI</h1>
         </div>
         <button className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-primary-container/20 transition-colors active:scale-95 duration-200">

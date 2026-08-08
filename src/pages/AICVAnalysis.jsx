@@ -34,9 +34,6 @@ export default function AICVAnalysis() {
         </div>
         <div className="flex items-center gap-4">
           <span className="material-symbols-outlined text-on-surface-variant p-2 hover:bg-primary-container/20 rounded-full transition-colors cursor-pointer">notifications</span>
-          <div className="w-10 h-10 rounded-full bg-primary-container/20 flex items-center justify-center overflow-hidden border-2 border-primary-container/30">
-            <img className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA-q-RSs8oVHB68Tbkxhg1b4wSpxWuTClD2eeiZ6S6dVMZ_5rwn8z1zSuppRwpFwzF6KV89CT1X3UHCXTZsl348zFLkm9jp5oVjubNMkl9qVTyZAjNvnD25eRnZIzf4EWs63hfq9gFwGJhSI1UGHlqmKYZaa6FcTDbrmQNudn7tqHY6JqxxTIM3X6XJyWdbNqwd0Y3Sjfir3P2ciku2vpGa-ouGTPaQ2B-j6Zi4C9szIA4L301A72vC" alt="Avatar" />
-          </div>
         </div>
       </header>
 

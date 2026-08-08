@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { recordCVUpload } from '../services/db';
 
 export default function UploadCV() {
   const navigate = useNavigate();
@@ -48,8 +49,9 @@ export default function UploadCV() {
         if (prev >= 100) {
           clearInterval(uploadIntervalRef.current);
           setIsSuccess(true);
-          // Persist the state in localStorage
+          // Persist the state in localStorage & Supabase
           localStorage.setItem('hasUploadedCV', 'true');
+          recordCVUpload('alex.sterling@example.com', name);
           
           // Hold the success screen for 1.5 seconds before navigating
           uploadTimeoutRef.current = setTimeout(() => {
@@ -108,9 +110,6 @@ export default function UploadCV() {
         </div>
         <div className="flex items-center gap-2">
           <span className="material-symbols-outlined text-primary p-2 hover:bg-primary-container/20 rounded-full transition-colors cursor-pointer">notifications</span>
-          <div className="w-8 h-8 rounded-full bg-surface-container-highest border border-outline-variant overflow-hidden">
-            <img className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD8EBpeQTbq4o-Rr3_2-koldhoXOIgMKCzXdON3bHeDoifr6BFwl9wjJgzf7f_jfXXVlPAEy-V3eGNnNcqd0phU9f1fmh5_SnN_W3J9T_EWBlzuOWN0EWxtvc8JThP3lDCi5KdVe25JCIRZRwZkkR6vD1TVJmxgloTwOPvWEF3eXYzLjA5EyrU96AzrVIREzJuUHQ3K3C071CxeeP-lbVk6QCIKmCZCHjNMtG1myHvKNGqfG8Ney9fR" alt="Avatar" />
-          </div>
         </div>
       </header>
 

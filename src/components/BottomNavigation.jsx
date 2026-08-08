@@ -17,7 +17,7 @@ export default function BottomNavigation({ layoutMode }) {
   ];
 
   return (
-    <nav className="fixed bottom-0 w-full max-w-[450px] md:hidden z-50 bg-surface/85 backdrop-blur-xl border-t border-outline-variant shadow-lg flex justify-around items-center px-4 pb-6 pt-2">
+    <nav className="fixed bottom-0 w-full max-w-[450px] z-50 bg-white/95 backdrop-blur-xl border-t border-outline-variant/50 shadow-2xl flex justify-around items-center px-2 py-2">
       {navItems.map((item) => {
         const isActive = item.matches.some(m => pathname.startsWith(m));
         return (
@@ -26,8 +26,8 @@ export default function BottomNavigation({ layoutMode }) {
             onClick={() => navigate(item.path)}
             className={
               isActive
-                ? "flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-4 py-1.5 scale-90 duration-200"
-                : "flex flex-col items-center justify-center text-on-surface-variant px-4 py-1.5 hover:bg-secondary-container/30 transition-colors duration-200"
+                ? "flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-2xl px-3 py-1.5 transition-all duration-200"
+                : "flex flex-col items-center justify-center text-on-surface-variant px-3 py-1.5 hover:bg-secondary-container/20 transition-all duration-200"
             }
           >
             <span 
@@ -36,7 +36,7 @@ export default function BottomNavigation({ layoutMode }) {
             >
               {item.icon}
             </span>
-            <span className="font-label-sm text-[11px] font-medium tracking-wide mt-0.5">{item.label}</span>
+            <span className="font-label-sm text-[11px] font-bold tracking-tight mt-0.5">{item.label}</span>
           </button>
         );
       })}

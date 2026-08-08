@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { signUpUser } from '../services/db';
 
 export default function SignUp() {
   const navigate = useNavigate();
@@ -15,20 +16,35 @@ export default function SignUp() {
   const [confirmPassword, setConfirmPassword] = useState('');
 
   // Focused state styles
-  const [nameFocused, setNameFocused] = useState(false);
+  const [fullNameFocused, setFullNameFocused] = useState(false);
   const [emailFocused, setEmailFocused] = useState(false);
   const [phoneFocused, setPhoneFocused] = useState(false);
   const [domicileFocused, setDomicileFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
-  const [confirmFocused, setConfirmFocused] = useState(false);
+  const [confirmPasswordFocused, setConfirmPasswordFocused] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (password !== confirmPassword) {
       alert("Passwords do not match!");
       return;
     }
-    // Simulate sign up success -> redirect directly to Home (/dashboard) as requested
+    await signUpUser(email, password, {
+      full_name: fullName,
+      country_code: countryCode,
+      phone_number: phoneNumber,
+      gender,
+      domicile
+    });
+    navigate('/dashboard');
+  };
+
+  const handleGoogleSignUp = async () => {
+    const googleEmail = 'user.google@example.com';
+    await signUpUser(googleEmail, 'password123', {
+      full_name: 'Google User',
+      domicile: 'Jakarta, Indonesia'
+    });
     navigate('/dashboard');
   };
 
@@ -72,33 +88,33 @@ export default function SignUp() {
 
           <div className="mb-8" id="auth-header">
             <h2 className="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mb-2">
-              Join MatchUp AI
+              Create your account
             </h2>
             <p className="font-body-md text-body-md text-on-surface-variant">
-              Start your journey to a better career today.
+              Start matching with top opportunities today.
             </p>
           </div>
 
           {/* Form Content */}
-          <form className="space-y-6" onSubmit={handleSubmit}>
+          <form className="space-y-5" onSubmit={handleSubmit}>
             {/* Full Name */}
             <div className="relative">
-              <label className={`absolute -top-2 left-3 px-1 bg-white text-xs font-medium z-10 transition-colors ${nameFocused ? 'text-primary' : 'text-outline'}`}>
+              <label className={`absolute -top-2 left-3 px-1 bg-white text-xs font-medium z-10 transition-colors ${fullNameFocused ? 'text-primary' : 'text-outline'}`}>
                 Full Name
               </label>
               <input 
                 className="w-full h-[56px] px-4 rounded-xl border border-outline hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none bg-transparent" 
-                placeholder="John Doe" 
+                placeholder="e.g. Alex Sterling" 
                 type="text"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                onFocus={() => setNameFocused(true)}
-                onBlur={() => setNameFocused(false)}
+                onFocus={() => setFullNameFocused(true)}
+                onBlur={() => setFullNameFocused(false)}
                 required
               />
             </div>
 
-            {/* Email Address */}
+            {/* Email Field */}
             <div className="relative">
               <label className={`absolute -top-2 left-3 px-1 bg-white text-xs font-medium z-10 transition-colors ${emailFocused ? 'text-primary' : 'text-outline'}`}>
                 Email Address
@@ -138,8 +154,8 @@ export default function SignUp() {
                   </div>
                 </div>
                 <input 
-                  className="flex-1 px-4 rounded-xl border border-outline hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none bg-transparent" 
-                  placeholder="812345678" 
+                  className="flex-1 h-full px-4 rounded-xl border border-outline hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none bg-transparent" 
+                  placeholder="812 3456 7890" 
                   type="tel"
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
@@ -150,31 +166,33 @@ export default function SignUp() {
               </div>
             </div>
 
-            {/* Gender Select */}
+            {/* Gender Selection */}
             <div className="relative">
-              <label className="absolute -top-2 left-3 px-1 bg-white text-xs font-medium z-10 text-outline">
-                Gender
-              </label>
-              <div className="relative w-full h-[56px]">
-                <select 
-                  className="w-full h-full px-4 rounded-xl border border-outline bg-transparent hover:border-primary focus:border-primary outline-none transition-all appearance-none"
-                  value={gender}
-                  onChange={(e) => setGender(e.target.value)}
+              <label className="block text-xs font-medium text-outline mb-1.5 ml-1">Gender</label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setGender('Male')}
+                  className={`h-[48px] rounded-xl border flex items-center justify-center gap-2 font-label-sm transition-all ${gender === 'Male' ? 'border-primary bg-primary-container/10 text-primary font-bold' : 'border-outline text-on-surface-variant hover:border-primary/50'}`}
                 >
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                  <option value="Other">Other</option>
-                </select>
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                  <span className="material-symbols-outlined text-outline">expand_more</span>
-                </div>
+                  <span className="material-symbols-outlined text-[18px]">male</span>
+                  Male
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setGender('Female')}
+                  className={`h-[48px] rounded-xl border flex items-center justify-center gap-2 font-label-sm transition-all ${gender === 'Female' ? 'border-primary bg-primary-container/10 text-primary font-bold' : 'border-outline text-on-surface-variant hover:border-primary/50'}`}
+                >
+                  <span className="material-symbols-outlined text-[18px]">female</span>
+                  Female
+                </button>
               </div>
             </div>
 
-            {/* Current Domicile / Current City */}
+            {/* Domicile / City */}
             <div className="relative">
               <label className={`absolute -top-2 left-3 px-1 bg-white text-xs font-medium z-10 transition-colors ${domicileFocused ? 'text-primary' : 'text-outline'}`}>
-                Current Domicile / City
+                Domicile / City
               </label>
               <input 
                 className="w-full h-[56px] px-4 rounded-xl border border-outline hover:border-primary focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none bg-transparent" 
@@ -188,7 +206,7 @@ export default function SignUp() {
               />
             </div>
 
-            {/* Password */}
+            {/* Password Field */}
             <div className="relative">
               <label className={`absolute -top-2 left-3 px-1 bg-white text-xs font-medium z-10 transition-colors ${passwordFocused ? 'text-primary' : 'text-outline'}`}>
                 Password
@@ -205,9 +223,9 @@ export default function SignUp() {
               />
             </div>
 
-            {/* Confirm Password */}
+            {/* Confirm Password Field */}
             <div className="relative">
-              <label className={`absolute -top-2 left-3 px-1 bg-white text-xs font-medium z-10 transition-colors ${confirmFocused ? 'text-primary' : 'text-outline'}`}>
+              <label className={`absolute -top-2 left-3 px-1 bg-white text-xs font-medium z-10 transition-colors ${confirmPasswordFocused ? 'text-primary' : 'text-outline'}`}>
                 Confirm Password
               </label>
               <input 
@@ -216,14 +234,14 @@ export default function SignUp() {
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                onFocus={() => setConfirmFocused(true)}
-                onBlur={() => setConfirmFocused(false)}
+                onFocus={() => setConfirmPasswordFocused(true)}
+                onBlur={() => setConfirmPasswordFocused(false)}
                 required
               />
             </div>
 
             {/* Submit Button */}
-            <button className="w-full h-[56px] bg-primary text-on-primary rounded-xl font-title-md text-title-md hover:shadow-lg hover:shadow-primary/20 active:scale-95 transition-all flex items-center justify-center gap-2" type="submit">
+            <button className="w-full h-[56px] bg-primary text-on-primary rounded-xl font-title-md text-title-md hover:shadow-lg hover:shadow-primary/20 active:scale-95 transition-all flex items-center justify-center gap-2 mt-4" type="submit">
               <span>Create Account</span>
               <span className="material-symbols-outlined text-xl">arrow_forward</span>
             </button>
@@ -238,7 +256,7 @@ export default function SignUp() {
 
           {/* Google Sign Up */}
           <div className="w-full">
-            <button onClick={() => navigate('/dashboard')} className="w-full h-[56px] flex items-center justify-center gap-3 border border-outline-variant rounded-xl hover:bg-surface-container-low transition-colors active:scale-95 duration-150">
+            <button onClick={handleGoogleSignUp} className="w-full h-[56px] flex items-center justify-center gap-3 border border-outline-variant rounded-xl hover:bg-surface-container-low transition-colors active:scale-95 duration-150">
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"></path>
                 <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"></path>

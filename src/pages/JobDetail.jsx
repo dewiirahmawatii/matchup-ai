@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { getJobById, toggleSaveJob, getUserProfile } from '../services/db';
+import { getMatchedJobs } from '../services/matching';
+import { analyzeJobCompatibility } from '../services/careerCoach';
 
 export default function JobDetail() {
   const navigate = useNavigate();
   const { id } = useParams();
   const [isSaved, setIsSaved] = useState(false);
-
-  // We can render custom dummy data based on the id
-  const jobDetail = {
+  const [coachAnalysis, setCoachAnalysis] = useState(null);
+  const [jobDetail, setJobDetail] = useState({
     title: 'Senior Product Designer',
     company: 'FintechFlow Inc.',
     location: 'San Francisco, CA',
@@ -17,6 +19,38 @@ export default function JobDetail() {
     salary: '$140k - $180k',
     posted: '2 days ago',
     applicants: 128,
+  });
+
+  useEffect(() => {
+    async function loadJob() {
+      if (id) {
+        const matched = await getMatchedJobs();
+        const found = matched.find(j => j.id === Number(id));
+        let activeJob = found;
+        if (found) {
+          setJobDetail(found);
+        } else {
+          const fallback = await getJobById(id);
+          if (fallback) {
+            setJobDetail(fallback);
+            activeJob = fallback;
+          }
+        }
+        
+        const userProfile = await getUserProfile();
+        const analysis = await analyzeJobCompatibility(activeJob, userProfile);
+        setCoachAnalysis(analysis);
+      }
+    }
+    loadJob();
+  }, [id]);
+
+  const handleToggleSave = async () => {
+    const nextSaved = !isSaved;
+    setIsSaved(nextSaved);
+    if (id) {
+      await toggleSaveJob('alex.sterling@example.com', Number(id), isSaved);
+    }
   };
 
   return (
@@ -82,7 +116,9 @@ export default function JobDetail() {
                 </div>
                 <div>
                   <h4 className="font-body-md text-body-md font-semibold text-on-surface">Skills Alignment</h4>
-                  <p className="font-body-md text-body-md text-on-surface-variant mt-1">Your expertise in Figma and Design Systems (4+ years) directly overlaps with their core requirements. Your recent portfolio projects showcase the exact complex dashboard logic they need.</p>
+                  <p className="font-body-md text-body-md text-on-surface-variant mt-1">
+                    {coachAnalysis?.whyMatches || "Your expertise in Figma and Design Systems directly overlaps with their core requirements. Your recent portfolio projects showcase the exact complex dashboard logic they need."}
+                  </p>
                 </div>
               </div>
               {/* Education Analysis */}
@@ -92,7 +128,7 @@ export default function JobDetail() {
                 </div>
                 <div>
                   <h4 className="font-body-md text-body-md font-semibold text-on-surface">Education</h4>
-                  <p className="font-body-md text-body-md text-on-surface-variant mt-1">Your M.S. in Human-Computer Interaction meets their "Advanced degree preferred" criteria, putting you in the top 5% of candidates.</p>
+                  <p className="font-body-md text-body-md text-on-surface-variant mt-1">Your degree meets their preferred qualifications, putting you in the top candidate tier.</p>
                 </div>
               </div>
               {/* Domain Experience */}
@@ -102,7 +138,7 @@ export default function JobDetail() {
                 </div>
                 <div>
                   <h4 className="font-body-md text-body-md font-semibold text-on-surface">Domain Experience</h4>
-                  <p className="font-body-md text-body-md text-on-surface-variant mt-1">Having worked at three Series B startups, you possess the "Agile-first" mindset and "fast-paced delivery" experience highlighted in the job description.</p>
+                  <p className="font-body-md text-body-md text-on-surface-variant mt-1">Having worked at tech startups, you possess the Agile-first mindset and fast delivery highlighted in the job description.</p>
                 </div>
               </div>
             </div>
@@ -111,20 +147,16 @@ export default function JobDetail() {
           {/* Missing Skills */}
           <section className="glass-card rounded-[24px] p-6 border-l-4 border-l-error">
             <h3 className="font-title-md text-title-md text-on-surface mb-4">Potential Gaps</h3>
-            <p className="font-body-md text-body-md text-on-surface-variant mb-6">MatchUp AI identified a few areas where you might need to prepare for the technical interview:</p>
+            <p className="font-body-md text-body-md text-on-surface-variant mb-6">
+              MatchUp AI identified a few areas where learning missing skills can boost your acceptance probability by <strong className="text-primary">+{coachAnalysis?.boostPercentage || 22}%</strong>:
+            </p>
             <div className="flex flex-col gap-3">
-              <div className="flex items-center gap-2 bg-surface-container px-4 py-2 rounded-xl border border-outline-variant">
-                <span className="material-symbols-outlined text-error text-[18px]">warning</span>
-                <span className="font-label-sm text-label-sm text-on-surface">Docker</span>
-              </div>
-              <div className="flex items-center gap-2 bg-surface-container px-4 py-2 rounded-xl border border-outline-variant">
-                <span className="material-symbols-outlined text-error text-[18px]">warning</span>
-                <span className="font-label-sm text-label-sm text-on-surface">CI/CD Pipelines</span>
-              </div>
-              <div className="flex items-center gap-2 bg-surface-container px-4 py-2 rounded-xl border border-outline-variant">
-                <span className="material-symbols-outlined text-error text-[18px]">warning</span>
-                <span className="font-label-sm text-label-sm text-on-surface">Stakeholder Management (Enterprise)</span>
-              </div>
+              {(coachAnalysis?.missingSkills || ['Docker', 'CI/CD Pipelines', 'Enterprise Stakeholder Management']).map((skill, i) => (
+                <div key={i} className="flex items-center gap-2 bg-surface-container px-4 py-2 rounded-xl border border-outline-variant">
+                  <span className="material-symbols-outlined text-error text-[18px]">warning</span>
+                  <span className="font-label-sm text-label-sm text-on-surface">{skill}</span>
+                </div>
+              ))}
             </div>
           </section>
 
@@ -136,7 +168,7 @@ export default function JobDetail() {
                 <h3 className="font-title-md text-title-md">MatchUp AI Recommendation</h3>
               </div>
               <p className="font-body-lg text-body-lg italic leading-relaxed text-[15px]">
-                "You are an exceptionally strong fit for this role. Based on current applicant data, your match score is higher than 92% of the pool. We recommend highlighting your 'Fintech Scalability' project in your first interview to address their current infrastructure transition."
+                "{coachAnalysis?.recommendationMessage || jobDetail.aiMatchDetails?.reason || "You are an exceptionally strong fit for this role. Based on current applicant data, your match score is higher than 92% of the pool. We recommend highlighting your core projects in your first interview."}"
               </p>
             </div>
             <div className="absolute -bottom-10 -right-10 opacity-20">
@@ -159,7 +191,7 @@ export default function JobDetail() {
                 <span className="material-symbols-outlined">north_east</span>
               </button>
               <button 
-                onClick={() => setIsSaved(!isSaved)}
+                onClick={handleToggleSave}
                 className="w-full h-14 bg-transparent border-2 border-primary text-primary font-title-md text-title-md rounded-full flex items-center justify-center gap-2 hover:bg-primary/5 transition-all active:scale-95"
               >
                 <span className="material-symbols-outlined" style={isSaved ? { fontVariationSettings: "'FILL' 1" } : {}}>{isSaved ? 'bookmark' : 'bookmark_border'}</span>

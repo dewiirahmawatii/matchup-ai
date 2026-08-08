@@ -1,8 +1,20 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getSkillGaps } from '../services/careerCoach';
 
 export default function SkillGap() {
   const navigate = useNavigate();
+  const [skillGapsList, setSkillGapsList] = useState([]);
+
+  useEffect(() => {
+    async function loadGaps() {
+      const gaps = await getSkillGaps();
+      if (Array.isArray(gaps)) {
+        setSkillGapsList(gaps);
+      }
+    }
+    loadGaps();
+  }, []);
 
   const skillsData = [
     {
@@ -42,9 +54,6 @@ export default function SkillGap() {
           <button className="p-2 rounded-full hover:bg-primary-container/20 transition-colors text-on-surface-variant">
             <span className="material-symbols-outlined">notifications</span>
           </button>
-          <div className="w-8 h-8 rounded-full bg-surface-container-highest overflow-hidden border border-outline-variant">
-            <img className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDx1DJFLJZP3sc6hdWoqGPonUgqvTwJuiCHUIJnmyRDBkxzVlEXp5Luwm7YYIJuVSnjVT5jYha1V-u9z86WDeUowNq3YzDsTa2AdUG5Qeh1sITvYYfcEblboZUUlxaD7wdMpXdilHwXorpUdDPTYOT7ahaE0_udLFJuDmrIcsDkmUkCBVIqVEhfK_pmPs4-Tb4njgvc-9OY4Kx6ilsZ_GdiYGAJbX6jJbGwhTJbfNoKbdB-j_ERG21O" alt="Avatar" />
-          </div>
         </div>
       </header>
 
@@ -76,25 +85,25 @@ export default function SkillGap() {
                 <span className="text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider">Overall Match</span>
                 <span className="material-symbols-outlined text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>stars</span>
               </div>
-              <div className="relative w-32 h-32 mx-auto">
-                <svg className="w-full h-full transform -rotate-90">
-                  <circle className="text-surface-container-high" cx="64" cy="64" fill="transparent" r="58" stroke="currentColor" strokeWidth="8"></circle>
+              <div className="relative w-32 h-32 mx-auto flex items-center justify-center">
+                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 128 128">
+                  <circle className="text-surface-container-high" cx="64" cy="64" fill="transparent" r="52" stroke="currentColor" strokeWidth="8"></circle>
                   <circle 
                     className="text-primary" 
                     cx="64" 
                     cy="64" 
                     fill="transparent" 
-                    r="58" 
+                    r="52" 
                     stroke="currentColor" 
-                    strokeDasharray="364.4" 
-                    strokeDashoffset="80" 
+                    strokeDasharray="326.7" 
+                    strokeDashoffset="71.8" 
                     strokeLinecap="round" 
                     strokeWidth="10"
                   ></circle>
                 </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-3xl font-bold text-on-surface">78%</span>
-                  <span className="text-[10px] text-on-surface-variant uppercase">Ready</span>
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
+                  <span className="text-3xl font-bold text-on-surface leading-none">78%</span>
+                  <span className="text-[10px] text-on-surface-variant font-medium uppercase mt-1">Ready</span>
                 </div>
               </div>
             </div>

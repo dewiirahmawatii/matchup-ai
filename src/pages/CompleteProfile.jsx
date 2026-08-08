@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { saveUserProfile } from '../services/db';
 
 export default function CompleteProfile() {
   const navigate = useNavigate();
@@ -23,10 +24,22 @@ export default function CompleteProfile() {
   const [workplace, setWorkplace] = useState('Remote Only');
   const [isDragOver, setIsDragOver] = useState(false);
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentStep < totalSteps) {
       setCurrentStep(currentStep + 1);
     } else {
+      // Save profile to Supabase database
+      await saveUserProfile({
+        email: 'alex.sterling@example.com',
+        full_name: fullName || 'Alex Sterling',
+        domicile: currentCity || 'San Francisco, CA',
+        highest_degree: highestDegree,
+        field_of_study: fieldOfStudy,
+        institution: institution,
+        interests: interests,
+        workplace: workplace,
+        readiness_score: 92
+      });
       // Finish onboarding flow -> redirect to Dashboard (Home) as requested
       navigate('/dashboard');
     }

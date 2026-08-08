@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { signInUser } from '../services/db';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -10,9 +11,15 @@ export default function Login() {
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Simulate login success -> redirect to Home
+    await signInUser(email, password);
+    navigate('/dashboard');
+  };
+
+  const handleSocialLogin = async (provider) => {
+    const socialEmail = `user.${provider.toLowerCase()}@example.com`;
+    await signInUser(socialEmail, 'password123');
     navigate('/dashboard');
   };
 
@@ -124,7 +131,7 @@ export default function Login() {
 
           {/* Social Logins */}
           <div className="grid grid-cols-2 gap-4">
-            <button onClick={() => navigate('/dashboard')} className="h-[56px] flex items-center justify-center gap-3 border border-outline-variant rounded-xl hover:bg-surface-container-low transition-colors active:scale-95 duration-150">
+            <button onClick={() => handleSocialLogin('Google')} className="h-[56px] flex items-center justify-center gap-3 border border-outline-variant rounded-xl hover:bg-surface-container-low transition-colors active:scale-95 duration-150">
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"></path>
                 <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"></path>
@@ -133,7 +140,7 @@ export default function Login() {
               </svg>
               <span className="font-label-sm text-label-sm font-semibold">Google</span>
             </button>
-            <button onClick={() => navigate('/dashboard')} className="h-[56px] flex items-center justify-center gap-3 border border-outline-variant rounded-xl hover:bg-surface-container-low transition-colors active:scale-95 duration-150">
+            <button onClick={() => handleSocialLogin('Apple')} className="h-[56px] flex items-center justify-center gap-3 border border-outline-variant rounded-xl hover:bg-surface-container-low transition-colors active:scale-95 duration-150">
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M17.05 20.28c-.96.95-2.04 1.72-3.23 1.72-1.16 0-1.53-.73-2.91-.73-1.39 0-1.8.72-2.91.73-1.16.01-2.21-.75-3.21-1.74-2.04-2.01-3.59-5.69-1.5-9.33 1.04-1.8 2.89-2.94 4.88-2.97 1.48-.03 2.88 1.02 3.79 1.02.9 0 2.58-1.25 4.36-1.07 1.16.05 2.14.47 2.89 1.19-2.31 1.34-1.92 4.41.43 5.42-.71 1.69-1.63 3.34-2.59 4.76zM12.03 7.25c-.02-2.21 1.83-4.04 4.04-4.25.24 2.45-2.11 4.45-4.04 4.25z"></path>
               </svg>

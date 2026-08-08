@@ -1,17 +1,27 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getCareerRoadmap } from '../services/careerCoach';
 
 export default function CareerRoadmap() {
   const navigate = useNavigate();
+  const [weeklyRoadmap, setWeeklyRoadmap] = useState([]);
+
+  useEffect(() => {
+    async function loadRoadmap() {
+      const data = await getCareerRoadmap();
+      if (Array.isArray(data)) {
+        setWeeklyRoadmap(data);
+      }
+    }
+    loadRoadmap();
+  }, []);
 
   return (
     <div className="flex-1 flex flex-col relative pb-32">
       {/* Top Header Bar */}
       <header className="sticky top-0 z-50 bg-surface/80 backdrop-blur-xl shadow-sm flex justify-between items-center w-full px-5 py-3">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-primary-container">
-            <img className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD-KJsjPaXj_OKjFk8dSDkagp7knClNGbikuQP0YhG8_0MokPMF5wXcFtQnZhcluiF_ci2o-EREO_gpJTbU8pnX88i1kGRpK7SPLkcsFO27CzUVXqRZpfG19ZZIEu6PMfBxEQq9gH-ds9aqEWPAnrv0dtG-J7cmErHQjwowp6IegDn_NO2i7RjSRWNS_YX9m3cv-SJlZieKV9Ma1AlkLl71Rg9y81lm0WxPQs7cs_Yn2vaJHCuVkdql" alt="Avatar" />
-          </div>
+        <div className="flex items-center gap-2">
+          <span className="material-symbols-outlined text-primary text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>bolt</span>
           <span className="font-headline-lg-mobile text-[22px] font-bold text-primary">MatchUp AI</span>
         </div>
         <button className="w-10 h-10 flex items-center justify-center rounded-full text-on-surface-variant hover:bg-primary-container/20 transition-colors active:scale-95">
