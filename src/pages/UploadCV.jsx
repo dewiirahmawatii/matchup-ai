@@ -49,9 +49,8 @@ export default function UploadCV() {
         if (prev >= 100) {
           clearInterval(uploadIntervalRef.current);
           setIsSuccess(true);
-          // Persist the state in localStorage & Supabase
+          // Persist the state in localStorage
           localStorage.setItem('hasUploadedCV', 'true');
-          recordCVUpload('alex.sterling@example.com', name);
           
           // Hold the success screen for 1.5 seconds before navigating
           uploadTimeoutRef.current = setTimeout(() => {
@@ -74,7 +73,21 @@ export default function UploadCV() {
       return;
     }
 
-    startUploadSim(file.name);
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const base64Data = reader.result.split(',')[1];
+        localStorage.setItem('cv_base64', base64Data);
+        localStorage.setItem('cv_filename', file.name);
+      } catch (err) {
+        console.error('Error reading CV file:', err);
+      }
+      startUploadSim(file.name);
+    };
+    reader.onerror = () => {
+      setErrorMessage('Failed to read the file.');
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleDrop = (e) => {

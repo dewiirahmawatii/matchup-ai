@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getUserProfile, saveUserProfile, deleteUserProfile } from '../services/db';
+import { getUserProfile, saveUserProfile, deleteUserProfile, getUserProfileStats } from '../services/db';
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -16,6 +16,15 @@ export default function Profile() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({ ...profile });
+  const [stats, setStats] = useState({
+    cvCount: 1,
+    applyCount: 0,
+    bookmarkCount: 0
+  });
+
+  const [profileTitle, setProfileTitle] = useState('Senior Product Designer & AI Strategist');
+  const [cvFilename, setCvFilename] = useState('Alex_Sterling_Product_Designer_2024.pdf');
+  const [cvUpdatedTime, setCvUpdatedTime] = useState('Updated 2 days ago');
 
   useEffect(() => {
     async function loadProfile() {
@@ -23,6 +32,27 @@ export default function Profile() {
       if (data) {
         setProfile(data);
         setEditForm(data);
+      }
+      const s = await getUserProfileStats('alex.sterling@example.com');
+      if (s) {
+        setStats(s);
+      }
+
+      const filename = localStorage.getItem('cv_filename');
+      if (filename) {
+        setCvFilename(filename);
+        setCvUpdatedTime('Updated just now');
+      } else {
+        const localCVs = JSON.parse(localStorage.getItem('user_cvs_local_alex.sterling@example.com') || '[]');
+        if (localCVs.length > 0) {
+          setCvFilename(localCVs[localCVs.length - 1]);
+          setCvUpdatedTime('Updated recently');
+        }
+      }
+
+      const savedTitle = localStorage.getItem('cv_target_role');
+      if (savedTitle) {
+        setProfileTitle(savedTitle);
       }
     }
     loadProfile();
@@ -110,7 +140,7 @@ export default function Profile() {
 
               <div className="flex-1 min-w-0">
                 <h2 className="font-headline-lg text-headline-lg text-on-surface mb-1 truncate">{profile.full_name || 'Alex Sterling'}</h2>
-                <p className="font-body-lg text-body-lg text-on-surface-variant truncate">Senior Product Designer &amp; AI Strategist</p>
+                <p className="font-body-lg text-body-lg text-on-surface-variant truncate">{profileTitle}</p>
                 
                 <div className="flex flex-wrap gap-2 mt-2">
                   <span className="bg-surface-container-high px-3 py-1 rounded-full text-label-sm font-label-sm text-primary flex items-center gap-1">
@@ -156,16 +186,16 @@ export default function Profile() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-3 bg-surface-container-low rounded-xl">
-                  <p className="text-label-sm font-label-sm text-on-surface-variant">Skills Match</p>
-                  <p className="text-title-md font-title-md text-primary">High</p>
+                  <p className="text-label-sm font-label-sm text-on-surface-variant">Jumlah CV</p>
+                  <p className="text-title-md font-title-md text-primary">{stats.cvCount}</p>
                 </div>
                 <div className="p-3 bg-surface-container-low rounded-xl">
-                  <p className="text-label-sm font-label-sm text-on-surface-variant">CV Strength</p>
-                  <p className="text-title-md font-title-md text-primary">Optimized</p>
+                  <p className="text-label-sm font-label-sm text-on-surface-variant">Jumlah Apply</p>
+                  <p className="text-title-md font-title-md text-primary">{stats.applyCount}</p>
                 </div>
                 <div className="p-3 bg-surface-container-low rounded-xl">
-                  <p className="text-label-sm font-label-sm text-on-surface-variant">Network</p>
-                  <p className="text-title-md font-title-md text-primary">Strong</p>
+                  <p className="text-label-sm font-label-sm text-on-surface-variant">Jumlah Bookmark</p>
+                  <p className="text-title-md font-title-md text-primary">{stats.bookmarkCount}</p>
                 </div>
                 <div className="p-3 bg-surface-container-low rounded-xl">
                   <p className="text-label-sm font-label-sm text-on-surface-variant">Market Demand</p>
@@ -184,8 +214,8 @@ export default function Profile() {
                   <span className="material-symbols-outlined">description</span>
                 </div>
                 <div className="flex-1 overflow-hidden">
-                  <p className="text-body-md font-title-md truncate text-[14px]">Alex_Sterling_Product_Designer_2024.pdf</p>
-                  <p className="text-label-sm font-label-sm text-on-surface-variant text-[11px]">Updated 2 days ago</p>
+                  <p className="text-body-md font-title-md truncate text-[14px]">{cvFilename}</p>
+                  <p className="text-label-sm font-label-sm text-on-surface-variant text-[11px]">{cvUpdatedTime}</p>
                 </div>
               </div>
             </div>

@@ -1,19 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { toggleSaveJob, DEFAULT_JOBS } from '../services/db';
+import { useNavigate, useOutletContext } from 'react-router-dom';
+import { toggleSaveJob, applyToJob, DEFAULT_JOBS } from '../services/db';
 import { getMatchedJobs } from '../services/matching';
 
 export default function Jobs() {
   const navigate = useNavigate();
-  const [jobs, setJobs] = useState(DEFAULT_JOBS);
+  const { showToast } = useOutletContext();
+  const [jobs, setJobs] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function loadJobs() {
-      const data = await getMatchedJobs('alex.sterling@example.com');
-      if (data && data.length > 0) {
-        setJobs(data);
+      setIsLoading(true);
+      try {
+        const data = await getMatchedJobs('alex.sterling@example.com');
+        if (data && data.length > 0) {
+          setJobs(data);
+        }
+      } catch (err) {
+        console.error('Failed to load jobs:', err);
+      } finally {
+        setIsLoading(false);
       }
     }
     loadJobs();
@@ -24,19 +33,31 @@ export default function Jobs() {
     const targetJob = jobs.find(j => j.id === id);
     if (!targetJob) return;
 
+    const nextBookmarked = !targetJob.bookmarked;
+    if (showToast) {
+      showToast(nextBookmarked ? "Opportunity saved!" : "Opportunity removed.");
+    }
+
     // Optimistic UI update
     setJobs(prevJobs =>
       prevJobs.map(job =>
-        job.id === id ? { ...job, bookmarked: !job.bookmarked } : job
+        job.id === id ? { ...job, bookmarked: nextBookmarked } : job
       )
     );
 
     await toggleSaveJob('alex.sterling@example.com', id, targetJob.bookmarked);
   };
 
-  const handleQuickApply = (jobId, e) => {
+  const handleQuickApply = async (jobId, e) => {
     e.stopPropagation();
-    window.open(`https://example.com/apply-dummy-job-${jobId}`, '_blank');
+    try {
+      if (showToast) showToast("Submitting your quick application...");
+      await applyToJob('alex.sterling@example.com', jobId);
+      if (showToast) showToast("Application submitted successfully!");
+    } catch (err) {
+      console.error(err);
+      if (showToast) showToast("Failed to submit application.", "error");
+    }
   };
 
   const filteredJobs = jobs.filter(job => {
@@ -128,54 +149,81 @@ export default function Jobs() {
 
         {/* Vertical Job List */}
         <div className="space-y-6">
-          {filteredJobs.map((job) => (
-            <div
-              key={job.id}
-              onClick={() => navigate(`/job-detail/${job.id}`)}
-              className="bg-white rounded-[24px] p-6 border border-[#E2E8F0] job-card-shadow transition-all group flex flex-col justify-between cursor-pointer"
-            >
-              <div>
-                <div className="flex justify-between items-start mb-4">
-                  <div className="w-14 h-14 rounded-2xl bg-[#F8FAFC] border border-outline-variant flex items-center justify-center p-2">
-                    <img className="w-full h-full object-contain" src={job.logo} alt={job.company} />
+          {isLoading ? (
+            // Shimmer Skeleton Loaders
+            [1, 2, 3].map(n => (
+              <div key={n} className="bg-white rounded-[24px] p-6 border border-[#E2E8F0] shadow-sm animate-pulse space-y-4">
+                <div className="flex justify-between items-start">
+                  <div className="w-14 h-14 bg-slate-200 rounded-2xl"></div>
+                  <div className="w-8 h-8 bg-slate-200 rounded-full"></div>
+                </div>
+                <div className="space-y-2">
+                  <div className="w-3/4 h-6 bg-slate-200 rounded-md"></div>
+                  <div className="w-1/2 h-4 bg-slate-200 rounded-md"></div>
+                </div>
+                <div className="pt-4 border-t border-slate-100 flex justify-between items-center">
+                  <div className="w-24 h-5 bg-slate-200 rounded-md"></div>
+                  <div className="w-28 h-10 bg-slate-200 rounded-xl"></div>
+                </div>
+              </div>
+            ))
+          ) : filteredJobs.length > 0 ? (
+            filteredJobs.map((job) => (
+              <div
+                key={job.id}
+                onClick={() => navigate(`/job-detail/${job.id}`)}
+                className="bg-white rounded-[24px] p-6 border border-[#E2E8F0] job-card-shadow transition-all group flex flex-col justify-between cursor-pointer"
+              >
+                <div>
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="w-14 h-14 rounded-2xl bg-[#F8FAFC] border border-outline-variant flex items-center justify-center p-2">
+                      <img className="w-full h-full object-contain" src={job.logo} alt={job.company} />
+                    </div>
+                    <button
+                      onClick={(e) => toggleBookmark(job.id, e)}
+                      className={`p-2 transition-colors ${job.bookmarked ? 'text-primary' : 'text-outline hover:text-primary'}`}
+                    >
+                      <span
+                        className="material-symbols-outlined"
+                        style={job.bookmarked ? { fontVariationSettings: "'FILL' 1" } : {}}
+                      >
+                        bookmark
+                      </span>
+                    </button>
+                  </div>
+
+                  <div className="mb-4">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E0F2FE] text-[#0369A1] font-label-sm mb-3">
+                      <span className="material-symbols-outlined text-[16px]" style={job.bookmarked ? { fontVariationSettings: "'FILL' 1" } : {}}>stars</span>
+                      {job.match}% Match
+                    </div>
+                    <h3 className="font-title-md text-title-md text-on-surface mb-1 group-hover:text-primary transition-colors">{job.title}</h3>
+                    <p className="text-on-surface-variant font-body-md">{job.company}</p>
+                  </div>
+                </div>
+
+                <div className="mt-4 pt-4 border-t border-outline-variant/30">
+                  <div className="flex justify-between items-center mb-4">
+                    <span className="text-on-surface font-bold font-body-md">{job.salary}</span>
+                    <span className="text-outline text-label-sm">{job.location} • {job.type || 'Full-time'}</span>
                   </div>
                   <button
-                    onClick={(e) => toggleBookmark(job.id, e)}
-                    className={`p-2 transition-colors ${job.bookmarked ? 'text-primary' : 'text-outline hover:text-primary'}`}
+                    onClick={(e) => handleQuickApply(job.id, e)}
+                    className="w-full bg-primary-container text-on-primary-container py-3 rounded-xl font-label-sm hover:scale-[1.01] active:scale-95 transition-all"
                   >
-                    <span
-                      className="material-symbols-outlined"
-                      style={job.bookmarked ? { fontVariationSettings: "'FILL' 1" } : {}}
-                    >
-                      bookmark
-                    </span>
+                    Quick Apply
                   </button>
                 </div>
-
-                <div className="mb-4">
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E0F2FE] text-[#0369A1] font-label-sm mb-3">
-                    <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>stars</span>
-                    {job.match}% Match
-                  </div>
-                  <h3 className="font-title-md text-title-md text-on-surface mb-1 group-hover:text-primary transition-colors">{job.title}</h3>
-                  <p className="text-on-surface-variant font-body-md">{job.company}</p>
-                </div>
               </div>
-
-              <div className="mt-4 pt-4 border-t border-outline-variant/30">
-                <div className="flex justify-between items-center mb-4">
-                  <span className="text-on-surface font-bold font-body-md">{job.salary}</span>
-                  <span className="text-outline text-label-sm">{job.location} • {job.type || 'Full-time'}</span>
-                </div>
-                <button
-                  onClick={(e) => handleQuickApply(job.id, e)}
-                  className="w-full bg-primary-container text-on-primary-container py-3 rounded-xl font-label-sm hover:scale-[1.01] active:scale-95 transition-all"
-                >
-                  Quick Apply
-                </button>
-              </div>
+            ))
+          ) : (
+            /* Empty State */
+            <div className="py-12 flex flex-col items-center justify-center text-center">
+              <span className="material-symbols-outlined text-outline text-6xl mb-4">search_off</span>
+              <h3 className="font-title-md text-on-surface mb-1">No matching jobs</h3>
+              <p className="text-on-surface-variant text-sm max-w-xs">We couldn't find any jobs matching your search parameters.</p>
             </div>
-          ))}
+          )}
         </div>
       </main>
     </div>

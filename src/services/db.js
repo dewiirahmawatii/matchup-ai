@@ -164,10 +164,16 @@ export async function getJobById(id) {
 }
 
 // 3. TOGGLE SAVED / BOOKMARKED JOB
-export async function toggleSaveJob(userEmail, jobId, currentStatus) {
+export async function toggleSaveJob(userEmail = 'alex.sterling@example.com', jobId, currentStatus) {
   try {
+    const localSavedIds = JSON.parse(localStorage.getItem('saved_jobs_local_' + userEmail) || '[]');
+    
     if (currentStatus) {
-      // Remove from saved
+      // Remove from local cache
+      const updatedIds = localSavedIds.filter(id => id !== Number(jobId));
+      localStorage.setItem('saved_jobs_local_' + userEmail, JSON.stringify(updatedIds));
+
+      // Remove from saved_jobs table
       await supabase
         .from('saved_jobs')
         .delete()
@@ -175,7 +181,13 @@ export async function toggleSaveJob(userEmail, jobId, currentStatus) {
         .eq('job_id', jobId);
       return false;
     } else {
-      // Insert into saved
+      // Add to local cache
+      if (!localSavedIds.includes(Number(jobId))) {
+        localSavedIds.push(Number(jobId));
+        localStorage.setItem('saved_jobs_local_' + userEmail, JSON.stringify(localSavedIds));
+      }
+
+      // Insert into saved_jobs table
       await supabase
         .from('saved_jobs')
         .insert([{ user_email: userEmail, job_id: jobId }]);
@@ -184,6 +196,33 @@ export async function toggleSaveJob(userEmail, jobId, currentStatus) {
   } catch (err) {
     console.error('Error toggling job bookmark:', err);
     return !currentStatus;
+  }
+}
+
+// 3b. GET SAVED JOBS FOR USER
+export async function getSavedJobs(userEmail = 'alex.sterling@example.com') {
+  try {
+    const { data: saved, error } = await supabase
+      .from('saved_jobs')
+      .select('job_id')
+      .eq('user_email', userEmail);
+    
+    let savedJobIds;
+    if (error || !saved) {
+      console.warn('Saved_jobs database query failed, using localStorage cache:', error);
+      savedJobIds = new Set(JSON.parse(localStorage.getItem('saved_jobs_local_' + userEmail) || '[]'));
+    } else {
+      const ids = saved.map(s => Number(s.job_id));
+      savedJobIds = new Set(ids);
+      localStorage.setItem('saved_jobs_local_' + userEmail, JSON.stringify(ids));
+    }
+
+    const allJobs = await getJobs(userEmail);
+    return allJobs.filter(j => savedJobIds.has(Number(j.id))).map(j => ({ ...j, bookmarked: true }));
+  } catch (err) {
+    console.error('Error fetching saved jobs:', err);
+    const savedJobIds = new Set(JSON.parse(localStorage.getItem('saved_jobs_local_' + userEmail) || '[]'));
+    return DEFAULT_JOBS.filter(j => savedJobIds.has(Number(j.id))).map(j => ({ ...j, bookmarked: true }));
   }
 }
 
@@ -340,17 +379,99 @@ export async function signInUser(email, password) {
 }
 
 // 8. RECORD CV UPLOAD
-export async function recordCVUpload(userEmail, fileName) {
+export async function recordCVUpload(userEmail = 'alex.sterling@example.com', fileName, analysisScore = 82, extractedSkills = []) {
   try {
-    await supabase.from('user_cvs').insert([
+    const localCVs = JSON.parse(localStorage.getItem('user_cvs_local_' + userEmail) || '[]');
+    if (!localCVs.includes(fileName)) {
+      localCVs.push(fileName);
+      localStorage.setItem('user_cvs_local_' + userEmail, JSON.stringify(localCVs));
+    }
+    const { data, error } = await supabase.from('user_cvs').insert([
       {
         user_email: userEmail,
         file_name: fileName,
-        analysis_score: 82,
-        extracted_skills: ['Figma Expert', 'Design Systems', 'Prototyping', 'React/Tailwind', 'User Research']
+        analysis_score: analysisScore,
+        extracted_skills: extractedSkills.length > 0 ? extractedSkills : ['Figma Expert', 'Design Systems', 'Prototyping', 'React/Tailwind', 'User Research']
       }
     ]);
+    if (error) {
+      console.warn('Error inserting CV record in Supabase:', error.message);
+    }
   } catch (err) {
     console.error('Error recording CV upload:', err);
+  }
+}
+
+// 9. APPLY TO JOB
+export async function applyToJob(userEmail = 'alex.sterling@example.com', jobId) {
+  try {
+    const localAppIds = JSON.parse(localStorage.getItem('applications_local_' + userEmail) || '[]');
+    if (!localAppIds.includes(Number(jobId))) {
+      localAppIds.push(Number(jobId));
+      localStorage.setItem('applications_local_' + userEmail, JSON.stringify(localAppIds));
+    }
+
+    const { data, error } = await supabase
+      .from('applications')
+      .insert([
+        {
+          user_email: userEmail,
+          job_id: jobId,
+          status: 'Pending',
+          applied_at: new Date().toISOString()
+        }
+      ]);
+
+    if (error) {
+      console.warn('Error saving application to Supabase:', error.message);
+    }
+    return { success: true, data };
+  } catch (err) {
+    console.error('Error in applyToJob:', err);
+    return { success: true };
+  }
+}
+
+// 10. GET USER PROFILE STATS
+export async function getUserProfileStats(userEmail = 'alex.sterling@example.com') {
+  try {
+    const { count: cvCount, error: cvErr } = await supabase
+      .from('user_cvs')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_email', userEmail);
+
+    const { count: applyCount, error: applyErr } = await supabase
+      .from('applications')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_email', userEmail);
+
+    const { count: bookmarkCount, error: bookmarkErr } = await supabase
+      .from('saved_jobs')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_email', userEmail);
+
+    const localCVs = JSON.parse(localStorage.getItem('user_cvs_local_' + userEmail) || '[]');
+    const localAppIds = JSON.parse(localStorage.getItem('applications_local_' + userEmail) || '[]');
+    const localSavedIds = JSON.parse(localStorage.getItem('saved_jobs_local_' + userEmail) || '[]');
+
+    const finalCv = (cvErr || cvCount === null) ? Math.max(1, localCVs.length) : cvCount;
+    const finalApply = (applyErr || applyCount === null) ? localAppIds.length : applyCount;
+    const finalBookmark = (bookmarkErr || bookmarkCount === null) ? localSavedIds.length : bookmarkCount;
+
+    return {
+      cvCount: finalCv,
+      applyCount: finalApply,
+      bookmarkCount: finalBookmark,
+    };
+  } catch (err) {
+    console.error('Error fetching profile stats:', err);
+    const localCVs = JSON.parse(localStorage.getItem('user_cvs_local_' + userEmail) || '[]');
+    const localAppIds = JSON.parse(localStorage.getItem('applications_local_' + userEmail) || '[]');
+    const localSavedIds = JSON.parse(localStorage.getItem('saved_jobs_local_' + userEmail) || '[]');
+    return {
+      cvCount: Math.max(1, localCVs.length),
+      applyCount: localAppIds.length,
+      bookmarkCount: localSavedIds.length,
+    };
   }
 }

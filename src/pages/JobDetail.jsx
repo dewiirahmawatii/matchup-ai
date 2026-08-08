@@ -1,19 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { getJobById, toggleSaveJob, getUserProfile } from '../services/db';
+import { useNavigate, useParams, useOutletContext } from 'react-router-dom';
+import { getJobById, toggleSaveJob, applyToJob, getUserProfile } from '../services/db';
 import { getMatchedJobs } from '../services/matching';
 import { analyzeJobCompatibility } from '../services/careerCoach';
 
 export default function JobDetail() {
   const navigate = useNavigate();
   const { id } = useParams();
+  const { showToast } = useOutletContext();
   const [isSaved, setIsSaved] = useState(false);
   const [coachAnalysis, setCoachAnalysis] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [jobDetail, setJobDetail] = useState({
     title: 'Senior Product Designer',
     company: 'FintechFlow Inc.',
     location: 'San Francisco, CA',
-    logo: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCYu0ByxNYVaDpkw1rS1FDIQrkCtWrYC8tcT7G9upS8S3_YA8Zpf7I_pxoMPfrJxRJdBF3AiXX9xrEQu4T8P-uia4vxKqjFamk-rUyf88enurs-7NtKpfw0po_cGYgZwTeAlfn8kuQXGUPD0cz702IoorJKhA3uw5ZnKd3eH0runxpjhX6oohliyAfViqlqVP4e5wEp010HARQu0TmVH0b3mqtg8L4bv0afTdOu3ye9tLglTgJuTOra',
+    logo: '',
     match: 94,
     type: 'Remote',
     salary: '$140k - $180k',
@@ -24,22 +26,33 @@ export default function JobDetail() {
   useEffect(() => {
     async function loadJob() {
       if (id) {
-        const matched = await getMatchedJobs();
-        const found = matched.find(j => j.id === Number(id));
-        let activeJob = found;
-        if (found) {
-          setJobDetail(found);
-        } else {
-          const fallback = await getJobById(id);
-          if (fallback) {
-            setJobDetail(fallback);
-            activeJob = fallback;
+        setIsLoading(true);
+        try {
+          const matched = await getMatchedJobs();
+          const found = matched.find(j => j.id === Number(id));
+          let activeJob = found;
+          if (found) {
+            setJobDetail(found);
+            setIsSaved(found.bookmarked || false);
+          } else {
+            const fallback = await getJobById(id);
+            if (fallback) {
+              setJobDetail(fallback);
+              activeJob = fallback;
+              setIsSaved(fallback.bookmarked || false);
+            }
           }
+          
+          if (activeJob) {
+            const userProfile = await getUserProfile();
+            const analysis = await analyzeJobCompatibility(activeJob, userProfile);
+            setCoachAnalysis(analysis);
+          }
+        } catch (err) {
+          console.error('Failed to load job details:', err);
+        } finally {
+          setIsLoading(false);
         }
-        
-        const userProfile = await getUserProfile();
-        const analysis = await analyzeJobCompatibility(activeJob, userProfile);
-        setCoachAnalysis(analysis);
       }
     }
     loadJob();
@@ -48,10 +61,44 @@ export default function JobDetail() {
   const handleToggleSave = async () => {
     const nextSaved = !isSaved;
     setIsSaved(nextSaved);
+    if (showToast) {
+      showToast(nextSaved ? "Job saved!" : "Job removed.");
+    }
     if (id) {
       await toggleSaveJob('alex.sterling@example.com', Number(id), isSaved);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex-1 flex flex-col relative pb-32">
+        <header className="bg-surface/80 backdrop-blur-xl sticky top-0 z-50 shadow-sm flex justify-between items-center w-full px-5 py-3">
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => navigate(-1)} 
+              className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-primary-container/20 transition-colors active:scale-95"
+            >
+              <span className="material-symbols-outlined text-primary">arrow_back</span>
+            </button>
+            <h1 className="font-headline-lg-mobile text-headline-lg-mobile font-bold text-primary">MatchUp AI</h1>
+          </div>
+        </header>
+        <main className="px-5 py-6 space-y-8 animate-pulse">
+          <div className="flex gap-6 items-start">
+            <div className="w-20 h-20 bg-slate-200 rounded-3xl"></div>
+            <div className="flex-1 space-y-3">
+              <div className="w-24 h-6 bg-slate-200 rounded-full"></div>
+              <div className="w-3/4 h-8 bg-slate-200 rounded-md"></div>
+              <div className="w-1/2 h-4 bg-slate-200 rounded-md"></div>
+            </div>
+          </div>
+          <div className="h-44 bg-slate-200 rounded-[24px]"></div>
+          <div className="h-32 bg-slate-200 rounded-[24px]"></div>
+          <div className="h-40 bg-slate-200 rounded-[24px]"></div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 flex flex-col relative pb-32">
@@ -181,9 +228,16 @@ export default function JobDetail() {
             <h4 className="font-title-md text-title-md text-on-surface mb-6">Interested?</h4>
             <div className="space-y-4">
               <button 
-                onClick={() => {
-                  alert("Application submitted!");
-                  navigate('/jobs');
+                onClick={async () => {
+                  try {
+                    if (showToast) showToast("Submitting your application...");
+                    await applyToJob('alex.sterling@example.com', Number(id));
+                    if (showToast) showToast("Application submitted successfully!");
+                    navigate('/jobs');
+                  } catch (err) {
+                    console.error(err);
+                    if (showToast) showToast("Failed to submit application.", "error");
+                  }
                 }}
                 className="w-full h-14 bg-primary text-on-primary font-title-md text-title-md rounded-full flex items-center justify-center gap-2 shadow-md hover:bg-primary/90 transition-all active:scale-95"
               >

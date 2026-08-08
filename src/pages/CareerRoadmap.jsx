@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useOutletContext } from 'react-router-dom';
 import { getCareerRoadmap } from '../services/careerCoach';
 
 export default function CareerRoadmap() {
   const navigate = useNavigate();
+  const { showToast } = useOutletContext() || {};
   const [weeklyRoadmap, setWeeklyRoadmap] = useState([]);
 
   useEffect(() => {
@@ -159,7 +160,9 @@ export default function CareerRoadmap() {
           <h2 className="font-headline-lg text-headline-lg text-on-surface">Ready to level up?</h2>
           <div className="flex flex-col gap-4 justify-center">
             <button 
-              onClick={() => alert("Roadmap task started!")}
+              onClick={() => {
+                if (showToast) showToast("Roadmap task started!");
+              }}
               className="bg-primary hover:bg-primary-container text-white px-8 py-4 rounded-full font-title-md text-title-md flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-primary/20 w-full"
             >
               <span className="material-symbols-outlined">play_circle</span>

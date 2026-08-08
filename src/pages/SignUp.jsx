@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useOutletContext } from 'react-router-dom';
 import { signUpUser } from '../services/db';
 
 export default function SignUp() {
   const navigate = useNavigate();
+  const { showToast } = useOutletContext();
   
   // Field states
   const [fullName, setFullName] = useState('');
@@ -26,7 +27,7 @@ export default function SignUp() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (password !== confirmPassword) {
-      alert("Passwords do not match!");
+      if (showToast) showToast("Passwords do not match!", "error");
       return;
     }
     await signUpUser(email, password, {
@@ -36,6 +37,7 @@ export default function SignUp() {
       gender,
       domicile
     });
+    if (showToast) showToast("Registration successful!");
     navigate('/dashboard');
   };
 

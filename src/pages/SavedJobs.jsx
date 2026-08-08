@@ -1,20 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { toggleSaveJob, DEFAULT_JOBS } from '../services/db';
+import { useNavigate, useOutletContext } from 'react-router-dom';
+import { toggleSaveJob, getSavedJobs, applyToJob, DEFAULT_JOBS } from '../services/db';
 import { getMatchedJobs } from '../services/matching';
 
 export default function SavedJobs() {
   const navigate = useNavigate();
+  const { showToast } = useOutletContext();
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState('All');
-  
-  const [savedJobs, setSavedJobs] = useState(DEFAULT_JOBS.map(j => ({ ...j, bookmarked: true })));
+  const [isLoading, setIsLoading] = useState(true);
+  const [savedJobs, setSavedJobs] = useState([]);
 
   useEffect(() => {
     async function loadSaved() {
-      const data = await getMatchedJobs('alex.sterling@example.com');
-      if (data && data.length > 0) {
-        setSavedJobs(data);
+      setIsLoading(true);
+      try {
+        const data = await getSavedJobs('alex.sterling@example.com');
+        if (data) {
+          setSavedJobs(data);
+        }
+      } catch (err) {
+        console.error('Failed to load saved jobs:', err);
+      } finally {
+        setIsLoading(false);
       }
     }
     loadSaved();
@@ -24,10 +32,15 @@ export default function SavedJobs() {
     const targetJob = savedJobs.find(j => j.id === id);
     if (!targetJob) return;
 
+    const nextBookmarked = !targetJob.bookmarked;
+    if (showToast) {
+      showToast(nextBookmarked ? "Job saved!" : "Job removed.");
+    }
+
     // Optimistic state change
     setSavedJobs(prevJobs =>
       prevJobs.map(job =>
-        job.id === id ? { ...job, bookmarked: !job.bookmarked } : job
+        job.id === id ? { ...job, bookmarked: nextBookmarked } : job
       )
     );
 
@@ -101,7 +114,26 @@ export default function SavedJobs() {
         </div>
 
         {/* Jobs Grid */}
-        {filteredJobs.length > 0 ? (
+        {isLoading ? (
+          <div className="space-y-6">
+            {[1, 2].map(n => (
+              <div key={n} className="bg-white rounded-[24px] p-6 border border-[#E2E8F0] shadow-sm animate-pulse space-y-4">
+                <div className="flex justify-between items-start">
+                  <div className="w-14 h-14 bg-slate-200 rounded-2xl"></div>
+                  <div className="w-8 h-8 bg-slate-200 rounded-full"></div>
+                </div>
+                <div className="space-y-2">
+                  <div className="w-3/4 h-6 bg-slate-200 rounded-md"></div>
+                  <div className="w-1/2 h-4 bg-slate-200 rounded-md"></div>
+                </div>
+                <div className="pt-4 border-t border-slate-100 flex justify-between items-center">
+                  <div className="w-24 h-5 bg-slate-200 rounded-md"></div>
+                  <div className="w-28 h-10 bg-slate-200 rounded-xl"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filteredJobs.length > 0 ? (
           <div className="space-y-6">
             {filteredJobs.map((job) => (
               <div 
@@ -148,9 +180,16 @@ export default function SavedJobs() {
                   </div>
                   
                   <button 
-                    onClick={(e) => {
+                    onClick={async (e) => {
                       e.stopPropagation();
-                      alert("Application submitted!");
+                      try {
+                        if (showToast) showToast("Submitting your application...");
+                        await applyToJob('alex.sterling@example.com', job.id);
+                        if (showToast) showToast("Application submitted successfully!");
+                      } catch (err) {
+                        console.error(err);
+                        if (showToast) showToast("Failed to submit application.", "error");
+                      }
                     }}
                     className="bg-primary hover:bg-primary-container text-on-primary px-6 py-3 rounded-xl font-title-md text-title-md transition-all active:scale-95 flex items-center gap-2 shadow-md"
                   >
