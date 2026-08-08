@@ -15,7 +15,8 @@ export default function Jobs() {
     async function loadJobs() {
       setIsLoading(true);
       try {
-        const data = await getMatchedJobs('alex.sterling@example.com');
+        const activeEmail = localStorage.getItem('currentUserEmail') || 'alex.sterling@example.com';
+        const data = await getMatchedJobs(activeEmail);
         if (data && data.length > 0) {
           setJobs(data);
         }
@@ -45,14 +46,16 @@ export default function Jobs() {
       )
     );
 
-    await toggleSaveJob('alex.sterling@example.com', id, targetJob.bookmarked);
+    const activeEmail = localStorage.getItem('currentUserEmail') || 'alex.sterling@example.com';
+    await toggleSaveJob(activeEmail, id, targetJob.bookmarked);
   };
 
   const handleQuickApply = async (jobId, e) => {
     e.stopPropagation();
     try {
+      const activeEmail = localStorage.getItem('currentUserEmail') || 'alex.sterling@example.com';
       if (showToast) showToast("Submitting your quick application...");
-      await applyToJob('alex.sterling@example.com', jobId);
+      await applyToJob(activeEmail, jobId);
       if (showToast) showToast("Application submitted successfully!");
     } catch (err) {
       console.error(err);

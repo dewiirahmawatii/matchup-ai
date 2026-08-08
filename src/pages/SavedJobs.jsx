@@ -15,7 +15,8 @@ export default function SavedJobs() {
     async function loadSaved() {
       setIsLoading(true);
       try {
-        const data = await getSavedJobs('alex.sterling@example.com');
+        const activeEmail = localStorage.getItem('currentUserEmail') || 'alex.sterling@example.com';
+        const data = await getSavedJobs(activeEmail);
         if (data) {
           setSavedJobs(data);
         }
@@ -44,7 +45,8 @@ export default function SavedJobs() {
       )
     );
 
-    await toggleSaveJob('alex.sterling@example.com', id, targetJob.bookmarked);
+    const activeEmail = localStorage.getItem('currentUserEmail') || 'alex.sterling@example.com';
+    await toggleSaveJob(activeEmail, id, targetJob.bookmarked);
   };
 
   const filteredJobs = savedJobs.filter(job => {

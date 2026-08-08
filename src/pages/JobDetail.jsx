@@ -65,7 +65,8 @@ export default function JobDetail() {
       showToast(nextSaved ? "Job saved!" : "Job removed.");
     }
     if (id) {
-      await toggleSaveJob('alex.sterling@example.com', Number(id), isSaved);
+      const activeEmail = localStorage.getItem('currentUserEmail') || 'alex.sterling@example.com';
+      await toggleSaveJob(activeEmail, Number(id), isSaved);
     }
   };
 
@@ -230,8 +231,9 @@ export default function JobDetail() {
               <button 
                 onClick={async () => {
                   try {
+                    const activeEmail = localStorage.getItem('currentUserEmail') || 'alex.sterling@example.com';
                     if (showToast) showToast("Submitting your application...");
-                    await applyToJob('alex.sterling@example.com', Number(id));
+                    await applyToJob(activeEmail, Number(id));
                     if (showToast) showToast("Application submitted successfully!");
                     navigate('/jobs');
                   } catch (err) {

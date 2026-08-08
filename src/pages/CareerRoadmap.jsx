@@ -38,7 +38,7 @@ export default function CareerRoadmap() {
             <h1 className="font-headline-lg text-headline-lg text-on-surface mb-2">Your Career Roadmap</h1>
             <p className="font-body-lg text-body-lg text-on-surface-variant">Based on your target role as <span className="font-bold text-primary">Senior DevOps Engineer</span>, MatchUp AI has curated this sequence to optimize your employability.</p>
           </div>
-          
+
           {/* Current Readiness Card */}
           <div className="glass-card rounded-[24px] p-6 flex flex-col items-center justify-center border-primary/10 self-start w-full">
             <span className="font-label-sm text-label-sm text-on-surface-variant mb-1">CURRENT READINESS</span>
@@ -60,7 +60,7 @@ export default function CareerRoadmap() {
             <p className="font-body-md text-body-md text-on-surface-variant">"Focusing on Step 1 this week will increase your match rate for high-paying remote roles by approximately 18% in the EMEA market. Shall we set a reminder for your Docker practice session?"</p>
             <div className="mt-3 flex gap-3">
               <button className="px-4 py-2 bg-primary text-white rounded-full font-label-sm text-label-sm hover:opacity-90 transition-opacity">Schedule Task</button>
-              <button 
+              <button
                 onClick={() => navigate('/skill-gap')}
                 className="px-4 py-2 border border-outline-variant text-on-surface-variant rounded-full font-label-sm text-label-sm hover:bg-surface-variant/50 transition-colors"
               >
@@ -75,7 +75,7 @@ export default function CareerRoadmap() {
         <div className="relative space-y-12">
           {/* Vertical line path */}
           <div className="absolute left-6 top-4 bottom-4 w-1 roadmap-line -translate-x-1/2"></div>
-          
+
           {/* Step 1: Active */}
           <div className="relative flex flex-col gap-4 group pl-16">
             <div className="absolute left-6 -translate-x-1/2 w-12 h-12 rounded-full bg-primary flex items-center justify-center text-white z-10 shadow-lg ring-4 ring-primary/20">
@@ -159,7 +159,7 @@ export default function CareerRoadmap() {
         <section className="mt-20 mb-10 text-center space-y-4">
           <h2 className="font-headline-lg text-headline-lg text-on-surface">Ready to level up?</h2>
           <div className="flex flex-col gap-4 justify-center">
-            <button 
+            <button
               onClick={() => {
                 if (showToast) showToast("Roadmap task started!");
               }}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getUserProfile, saveUserProfile, deleteUserProfile, getUserProfileStats } from '../services/db';
+import { getUserProfile, saveUserProfile, deleteUserProfile, getUserProfileStats, getAppliedJobs } from '../services/db';
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -22,20 +22,27 @@ export default function Profile() {
     bookmarkCount: 0
   });
 
+  const [appliedJobsList, setAppliedJobsList] = useState([]);
   const [profileTitle, setProfileTitle] = useState('Senior Product Designer & AI Strategist');
   const [cvFilename, setCvFilename] = useState('Alex_Sterling_Product_Designer_2024.pdf');
   const [cvUpdatedTime, setCvUpdatedTime] = useState('Updated 2 days ago');
 
   useEffect(() => {
     async function loadProfile() {
-      const data = await getUserProfile();
+      const activeEmail = localStorage.getItem('currentUserEmail') || 'alex.sterling@example.com';
+      const data = await getUserProfile(activeEmail);
       if (data) {
         setProfile(data);
         setEditForm(data);
       }
-      const s = await getUserProfileStats('alex.sterling@example.com');
+      const s = await getUserProfileStats(activeEmail);
       if (s) {
         setStats(s);
+      }
+
+      const appliedData = await getAppliedJobs(activeEmail);
+      if (Array.isArray(appliedData) && appliedData.length > 0) {
+        setAppliedJobsList(appliedData);
       }
 
       const filename = localStorage.getItem('cv_filename');
@@ -256,21 +263,55 @@ export default function Profile() {
           <div className="glass-card rounded-[24px] p-6">
             <div className="flex justify-between items-center mb-6">
               <h3 className="font-title-md text-title-md text-on-surface">Applied Jobs</h3>
-              <button className="text-primary font-label-sm text-label-sm hover:underline">View All</button>
+              <button onClick={() => navigate('/jobs')} className="text-primary font-label-sm text-label-sm hover:underline">View All</button>
             </div>
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 border border-outline-variant rounded-2xl hover:border-primary transition-colors cursor-pointer group">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg overflow-hidden bg-surface-container flex-shrink-0 flex items-center justify-center text-primary font-bold">
-                    <span className="material-symbols-outlined">work</span>
+              {appliedJobsList.length > 0 ? (
+                appliedJobsList.map((app) => {
+                  const job = app.jobs || {};
+                  return (
+                    <div 
+                      key={app.id || app.job_id}
+                      onClick={() => navigate(`/job-detail/${app.job_id}`)}
+                      className="flex items-center justify-between p-3 border border-outline-variant rounded-2xl hover:border-primary transition-colors cursor-pointer group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg overflow-hidden bg-surface-container flex-shrink-0 flex items-center justify-center text-primary font-bold">
+                          {job.logo ? (
+                            <img className="w-full h-full object-contain" src={job.logo} alt={job.company} />
+                          ) : (
+                            <span className="material-symbols-outlined">work</span>
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-title-md text-title-md text-on-surface group-hover:text-primary transition-colors text-[14px]">
+                            {job.title || 'Applied Position'}
+                          </p>
+                          <p className="text-label-sm font-label-sm text-on-surface-variant text-[11px]">
+                            {job.company || 'Company'} • Applied {new Date(app.applied_at || Date.now()).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                      <span className="bg-surface-container-high px-3 py-1 rounded-full text-label-sm font-label-sm text-on-surface-variant text-[11px]">
+                        {app.status || 'Under Review'}
+                      </span>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="flex items-center justify-between p-3 border border-outline-variant rounded-2xl hover:border-primary transition-colors cursor-pointer group">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg overflow-hidden bg-surface-container flex-shrink-0 flex items-center justify-center text-primary font-bold">
+                      <span className="material-symbols-outlined">work</span>
+                    </div>
+                    <div>
+                      <p className="font-title-md text-title-md text-on-surface group-hover:text-primary transition-colors text-[14px]">Senior Designer</p>
+                      <p className="text-label-sm font-label-sm text-on-surface-variant text-[11px]">Stellar Tech • Applied 3d ago</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-title-md text-title-md text-on-surface group-hover:text-primary transition-colors text-[14px]">Senior Designer</p>
-                    <p className="text-label-sm font-label-sm text-on-surface-variant text-[11px]">Stellar Tech • Applied 3d ago</p>
-                  </div>
+                  <span className="bg-surface-container-high px-3 py-1 rounded-full text-label-sm font-label-sm text-on-surface-variant text-[11px]">Under Review</span>
                 </div>
-                <span className="bg-surface-container-high px-3 py-1 rounded-full text-label-sm font-label-sm text-on-surface-variant text-[11px]">Under Review</span>
-              </div>
+              )}
             </div>
           </div>
 

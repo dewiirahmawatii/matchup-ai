@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import { getMatchedJobs } from '../services/matching';
-import { getUserProfile } from '../services/db';
+import { getUserProfile, applyToJob } from '../services/db';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -62,6 +62,17 @@ export default function Dashboard() {
     }
     loadRecommended();
   }, []);
+
+  const handleApplyRecommended = async (jobId, e) => {
+    e.stopPropagation();
+    try {
+      const activeEmail = localStorage.getItem('currentUserEmail') || 'alex.sterling@example.com';
+      await applyToJob(activeEmail, jobId);
+      navigate(`/job-detail/${jobId}`);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const getFirstName = () => {
     if (!profile?.full_name) return 'User';
@@ -268,7 +279,10 @@ export default function Dashboard() {
                   
                   <div className="flex items-center justify-between pt-4 border-t border-outline-variant/30">
                     <span className="font-title-md text-sm md:text-base font-bold text-on-surface">{job.salary}</span>
-                    <button className="bg-primary px-5 py-2.5 text-on-primary rounded-xl font-label-sm text-xs md:text-sm font-bold hover:bg-primary-container transition-colors shadow-sm">
+                    <button 
+                      onClick={(e) => handleApplyRecommended(job.id, e)}
+                      className="bg-primary px-5 py-2.5 text-on-primary rounded-xl font-label-sm text-xs md:text-sm font-bold hover:bg-primary-container transition-colors shadow-sm"
+                    >
                       Apply
                     </button>
                   </div>

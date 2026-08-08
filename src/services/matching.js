@@ -146,11 +146,12 @@ function generateAIMatchReason(scores, job, candidateSkills) {
  * - Location = 10%
  * - Career Interest = 20%
  */
-export async function getMatchedJobs(userEmail = 'alex.sterling@example.com') {
+export async function getMatchedJobs(userEmail) {
   try {
+    const activeEmail = userEmail || localStorage.getItem('currentUserEmail') || 'alex.sterling@example.com';
     const [jobs, userProfile] = await Promise.all([
-      getJobs(userEmail),
-      getUserProfile(userEmail)
+      getJobs(activeEmail),
+      getUserProfile(activeEmail)
     ]);
 
     const candidateSkills = userProfile?.extracted_skills || DEFAULT_CANDIDATE_SKILLS;
